@@ -1,5 +1,11 @@
 # Historial de versiones
 
+## 0.2.17 — Asignación de jugadores por categoría y zona
+
+- El alta y la asignación de jugadores ahora presentan equipo, categoría y zona en selectores separados y encadenados.
+- La opción **Ver plantel** usa los mismos selectores para incorporar jugadores al equipo.
+- Se ocultan opciones duplicadas históricas de categoría y zona en estos flujos.
+
 ## 0.2.16 — Filtros dinámicos en el dashboard
 
 - Los filtros de torneo, categoría y zona se aplican automáticamente, sin requerir un botón adicional.

@@ -22,6 +22,7 @@ export type TeamRegistrationOption = {
   id: string;
   team_id: string;
   team_name: string;
+  category_name: string;
   zone_name: string;
   label: string;
 };

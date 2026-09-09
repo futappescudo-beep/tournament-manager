@@ -138,7 +138,7 @@ export async function getTeamRoster(teamId: string) {
     return assignedTeamId && assignedTeamId !== teamId ? [assignment.player_id] : [];
   }));
   const availablePlayers = (allPlayersResult.data ?? []).filter((player) => !assignedToOtherTeam.has(player.id));
-  if (!registrationIds.length) return { team, registrations: [] as Array<{ id: string; label: string }>, players: [] as Array<Record<string, unknown>>, availablePlayers };
+  if (!registrationIds.length) return { team, registrations: [] as Array<{ id: string; category_name: string; zone_name: string; label: string }>, players: [] as Array<Record<string, unknown>>, availablePlayers };
   const { data: players, error: playersError } = await supabase.from("player_team_registrations").select("id,shirt_number,is_captain,is_goalkeeper,team_registration_id,players(first_name,last_name,document_number,photo_url)").in("team_registration_id", registrationIds).is("deleted_at", null).is("left_at", null).order("shirt_number");
   if (playersError) throw new Error(playersError.message);
   return {
@@ -146,8 +146,10 @@ export async function getTeamRoster(teamId: string) {
     registrations: (registrations ?? []).map((registration) => {
       const category = Array.isArray(registration.categories) ? registration.categories[0] : registration.categories;
       const zone = Array.isArray(registration.zones) ? registration.zones[0] : registration.zones;
-      return { id: registration.id, label: [category?.name, zone?.name].filter(Boolean).join(" · ") || "Zona sin nombre" };
-    }),
+      const categoryName = category?.name?.trim() || "Categoría sin nombre";
+      const zoneName = zone?.name?.trim() || "Zona sin nombre";
+      return { id: registration.id, category_name: categoryName, zone_name: zoneName, label: `${categoryName} · ${zoneName}` };
+    }).filter((registration, index, all) => all.findIndex((item) => item.category_name.normalize("NFD").replace(/\p{Diacritic}/gu, "").replace(/[^\p{L}\p{N}]/gu, "").toLocaleLowerCase("es-AR") === registration.category_name.normalize("NFD").replace(/\p{Diacritic}/gu, "").replace(/[^\p{L}\p{N}]/gu, "").toLocaleLowerCase("es-AR") && item.zone_name.normalize("NFD").replace(/\p{Diacritic}/gu, "").replace(/[^\p{L}\p{N}]/gu, "").toLocaleLowerCase("es-AR") === registration.zone_name.normalize("NFD").replace(/\p{Diacritic}/gu, "").replace(/[^\p{L}\p{N}]/gu, "").toLocaleLowerCase("es-AR")) === index),
     players: players ?? [],
     availablePlayers,
   };

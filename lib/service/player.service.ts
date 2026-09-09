@@ -45,12 +45,15 @@ export async function getTeamRegistrationOptions(): Promise<TeamRegistrationOpti
     if (!teamName) return [];
     const category = Array.isArray(item.categories) ? item.categories[0] : item.categories;
     const zone = Array.isArray(item.zones) ? item.zones[0] : item.zones;
-    const zoneName = [category?.name, zone?.name].filter(Boolean).join(" · ") || "Zona sin nombre";
-    return [{ id: item.id, team_id: item.team_id, team_name: teamName, zone_name: zoneName, label: `${teamName} · ${zoneName}` }];
+    const categoryName = category?.name?.trim() || "Categoría sin nombre";
+    const zoneName = zone?.name?.trim() || "Zona sin nombre";
+    return [{ id: item.id, team_id: item.team_id, team_name: teamName, category_name: categoryName, zone_name: zoneName, label: `${teamName} · ${categoryName} · ${zoneName}` }];
   });
+  const catalogKey = (value: string) => value.normalize("NFD").replace(/\p{Diacritic}/gu, "").replace(/[^\p{L}\p{N}]/gu, "").toLocaleLowerCase("es-AR");
   return (teamsResult.data ?? []).flatMap((team) => {
     const teamRegistrations = registrations.filter((registration) => registration.team_id === team.id);
-    return teamRegistrations.length ? teamRegistrations : [{ id: "", team_id: team.id, team_name: team.name, zone_name: "", label: team.name }];
+    const visibleRegistrations = teamRegistrations.filter((registration, index, all) => all.findIndex((item) => item.team_id === registration.team_id && catalogKey(item.category_name) === catalogKey(registration.category_name) && catalogKey(item.zone_name) === catalogKey(registration.zone_name)) === index);
+    return visibleRegistrations.length ? visibleRegistrations : [{ id: "", team_id: team.id, team_name: team.name, category_name: "", zone_name: "", label: team.name }];
   });
 }
 
