@@ -1,6 +1,6 @@
 import { requireUser } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
-import type { CategoryValues, TournamentValues, ZoneValues } from "@/lib/validations/settings";
+import type { CategoryValues, FieldValues, RefereeValues, TournamentValues, ZoneValues } from "@/lib/validations/settings";
 import type { ProfileRoleValues } from "@/lib/validations/settings";
 import type { DeleteProfileValues } from "@/lib/validations/settings";
 import { redirect } from "next/navigation";
@@ -10,6 +10,8 @@ export type TournamentOption = { id: string; name: string; season: string | null
 export type CategorySetup = { id: string; tournament_id: string; name: string; zones: { id: string; name: string; max_teams: number | null }[] };
 export type RoleOption = { code: string; name: string };
 export type ProfileOption = { id: string; first_name: string; last_name: string; role_code: string };
+export type FieldSetup = { id: string; name: string };
+export type RefereeSetup = { id: string; first_name: string; last_name: string };
 
 async function requireSuperAdmin() {
   await requireUser();
@@ -19,25 +21,29 @@ async function requireSuperAdmin() {
   return supabase;
 }
 
-export async function getTournamentSetup(): Promise<{ tournaments: TournamentOption[]; categories: CategorySetup[]; roles: RoleOption[]; profiles: ProfileOption[] }> {
+export async function getTournamentSetup(): Promise<{ tournaments: TournamentOption[]; categories: CategorySetup[]; roles: RoleOption[]; profiles: ProfileOption[]; fields: FieldSetup[]; referees: RefereeSetup[] }> {
   const supabase = await requireSuperAdmin();
-  const [tournamentsResult, categoriesResult, zonesResult, rolesResult, profilesResult] = await Promise.all([
+  const [tournamentsResult, categoriesResult, zonesResult, rolesResult, profilesResult, fieldsResult, refereesResult] = await Promise.all([
     supabase.from("tournaments").select("id,name,season,description").is("deleted_at", null).order("created_at"),
     supabase.from("categories").select("id,tournament_id,name").is("deleted_at", null).order("display_order"),
     supabase.from("zones").select("id,category_id,name,max_teams").is("deleted_at", null).order("display_order"),
     supabase.from("roles").select("code,name").order("display_order"),
     supabase.from("profiles").select("id,first_name,last_name,roles(code)").eq("active", true).order("first_name"),
+    supabase.from("fields").select("id,name").is("deleted_at", null).eq("active", true).order("name"),
+    supabase.from("referees").select("id,first_name,last_name").is("deleted_at", null).eq("active", true).order("last_name"),
   ]);
   if (tournamentsResult.error) throw new Error(tournamentsResult.error.message);
   if (categoriesResult.error) throw new Error(categoriesResult.error.message);
   if (zonesResult.error) throw new Error(zonesResult.error.message);
   if (rolesResult.error) throw new Error(rolesResult.error.message);
   if (profilesResult.error) throw new Error(profilesResult.error.message);
+  if (fieldsResult.error) throw new Error(fieldsResult.error.message);
+  if (refereesResult.error) throw new Error(refereesResult.error.message);
   const profiles = (profilesResult.data ?? []).map((profile) => {
     const roles = profile.roles as unknown as { code: string }[] | { code: string } | null;
     return { id: profile.id, first_name: profile.first_name, last_name: profile.last_name, role_code: Array.isArray(roles) ? roles[0]?.code ?? "PLAYER" : roles?.code ?? "PLAYER" };
   });
-  return { tournaments: tournamentsResult.data ?? [], categories: (categoriesResult.data ?? []).map((category) => ({ ...category, zones: (zonesResult.data ?? []).filter((zone) => zone.category_id === category.id).map((zone) => ({ id: zone.id, name: zone.name, max_teams: zone.max_teams })) })), roles: (rolesResult.data ?? []) as RoleOption[], profiles };
+  return { tournaments: tournamentsResult.data ?? [], categories: (categoriesResult.data ?? []).map((category) => ({ ...category, zones: (zonesResult.data ?? []).filter((zone) => zone.category_id === category.id).map((zone) => ({ id: zone.id, name: zone.name, max_teams: zone.max_teams })) })), roles: (rolesResult.data ?? []) as RoleOption[], profiles, fields: fieldsResult.data ?? [], referees: refereesResult.data ?? [] };
 }
 
 export async function assignProfileRole({ userId, roleCode }: ProfileRoleValues) {
@@ -106,6 +112,38 @@ export async function createZone(values: ZoneValues) {
 export async function updateZoneCapacity(zoneId: string, maxTeams: number | null) {
   const supabase = await requireSuperAdmin();
   const { error } = await supabase.from("zones").update({ max_teams: maxTeams }).eq("id", zoneId).is("deleted_at", null);
+  if (error) throw new Error(error.message);
+}
+
+export async function createField(values: FieldValues) {
+  const supabase = await requireSuperAdmin();
+  const { data: duplicate, error: duplicateError } = await supabase.from("fields").select("id").ilike("name", values.name).is("deleted_at", null).maybeSingle();
+  if (duplicateError) throw new Error(duplicateError.message);
+  if (duplicate) throw new Error("Ya existe una cancha con ese nombre.");
+  const { data, error } = await supabase.from("fields").insert({ name: values.name, active: true }).select("id,name").single();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function createReferee(values: RefereeValues) {
+  const supabase = await requireSuperAdmin();
+  const { data: duplicate, error: duplicateError } = await supabase.from("referees").select("id").ilike("first_name", values.first_name).ilike("last_name", values.last_name).is("deleted_at", null).maybeSingle();
+  if (duplicateError) throw new Error(duplicateError.message);
+  if (duplicate) throw new Error("Ya existe un árbitro con ese nombre.");
+  const { data, error } = await supabase.from("referees").insert({ first_name: values.first_name, last_name: values.last_name, active: true }).select("id,first_name,last_name").single();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function deleteField(fieldId: string) {
+  const supabase = await requireSuperAdmin();
+  const { error } = await supabase.from("fields").update({ deleted_at: new Date().toISOString(), active: false }).eq("id", fieldId).is("deleted_at", null);
+  if (error) throw new Error(error.message);
+}
+
+export async function deleteReferee(refereeId: string) {
+  const supabase = await requireSuperAdmin();
+  const { error } = await supabase.from("referees").update({ deleted_at: new Date().toISOString(), active: false }).eq("id", refereeId).is("deleted_at", null);
   if (error) throw new Error(error.message);
 }
 

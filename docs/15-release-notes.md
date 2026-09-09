@@ -1,5 +1,11 @@
 # Historial de versiones
 
+## 0.2.15 — Recursos para programar el fixture
+
+* Configuración incorpora maestros de Canchas y Árbitros, con alta y baja lógica.
+* Las canchas y árbitros activos quedan disponibles en el formulario de alta manual de partidos.
+* Requiere ejecutar la migración `20260910_fixture_resources_access.sql` en Supabase para habilitar las altas y bajas.
+
 ## 0.2.14 — Maestro de zonas
 
 * Al crear una categoría se elige entre una y cinco zonas; el sistema genera automáticamente Zona A hasta Zona E.

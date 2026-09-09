@@ -22,6 +22,16 @@ export type TournamentValues = z.infer<typeof tournamentSchema>;
 export type CategoryValues = z.infer<typeof categorySchema>;
 export type ZoneValues = z.infer<typeof zoneSchema>;
 
+export const fieldSchema = z.object({
+  name: z.string().trim().min(2, "Ingresá el nombre de la cancha.").max(120),
+});
+export const refereeSchema = z.object({
+  first_name: z.string().trim().min(2, "Ingresá el nombre.").max(80),
+  last_name: z.string().trim().min(2, "Ingresá el apellido.").max(80),
+});
+export type FieldValues = z.infer<typeof fieldSchema>;
+export type RefereeValues = z.infer<typeof refereeSchema>;
+
 export const profileRoleSchema = z.object({
   userId: z.uuid({ error: "El usuario seleccionado no es válido." }),
   roleCode: z.enum(["SUPER_ADMIN", "TOURNAMENT_ADMIN", "TEAM_MANAGER", "REFEREE", "PLAYER"]),
@@ -39,3 +49,5 @@ export const zoneCapacitySchema = z.object({ zoneId: z.uuid(), maxTeams: z.coerc
 export const tournamentIdSchema = z.uuid();
 export const categoryIdSchema = z.uuid();
 export const zoneIdSchema = z.uuid();
+export const fieldIdSchema = z.uuid();
+export const refereeIdSchema = z.uuid();
