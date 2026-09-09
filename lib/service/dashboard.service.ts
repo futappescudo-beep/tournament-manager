@@ -9,12 +9,24 @@ export async function getDashboardCatalog(): Promise<DashboardCatalog> {
   await requireUser(); const supabase = await createClient();
   const [tournaments, categories, zones] = await Promise.all([supabase.from("tournaments").select("id,name").is("deleted_at", null).order("name"), supabase.from("categories").select("id,tournament_id,name").is("deleted_at", null).eq("active", true).order("display_order"), supabase.from("zones").select("id,category_id,name").is("deleted_at", null).order("display_order")]);
   if (tournaments.error) throw new Error(tournaments.error.message); if (categories.error) throw new Error(categories.error.message); if (zones.error) throw new Error(zones.error.message);
-  return { tournaments: tournaments.data ?? [], categories: categories.data ?? [], zones: zones.data ?? [] };
+  const normalized = (value: string) => value.trim().toLocaleLowerCase("es-AR");
+  const visibleCategories = (categories.data ?? []).filter((category, index, all) => all.findIndex((item) => item.tournament_id === category.tournament_id && normalized(item.name) === normalized(category.name)) === index);
+  const visibleCategoryIds = new Set(visibleCategories.map((category) => category.id));
+  const visibleZones = (zones.data ?? []).filter((zone, index, all) => visibleCategoryIds.has(zone.category_id) && all.findIndex((item) => item.category_id === zone.category_id && normalized(item.name) === normalized(zone.name)) === index);
+  return { tournaments: tournaments.data ?? [], categories: visibleCategories, zones: visibleZones };
 }
 
 export async function getDashboardData(filter: DashboardFilter): Promise<{ teamCount: number; playerCount: number; goalCount: number; matches: FixtureMatch[]; standings: Standing[] }> {
   await requireUser(); const supabase = await createClient(); const catalog = await getDashboardCatalog();
-  const categoryIds = filter.categoryId ? [filter.categoryId] : catalog.categories.filter((item) => !filter.tournamentId || item.tournament_id === filter.tournamentId).map((item) => item.id);
+  const { data: rawCategories, error: rawCategoriesError } = await supabase.from("categories").select("id,tournament_id,name").is("deleted_at", null).eq("active", true);
+  if (rawCategoriesError) throw new Error(rawCategoriesError.message);
+  const normalized = (value: string) => value.trim().toLocaleLowerCase("es-AR");
+  const selectedCategory = catalog.categories.find((category) => category.id === filter.categoryId);
+  const categoryIds = selectedCategory
+    ? (rawCategories ?? []).filter((category) => category.tournament_id === selectedCategory.tournament_id && normalized(category.name) === normalized(selectedCategory.name)).map((category) => category.id)
+    : filter.tournamentId
+      ? (rawCategories ?? []).filter((category) => category.tournament_id === filter.tournamentId).map((category) => category.id)
+      : [];
   let registrationsQuery = supabase.from("team_category_registrations").select("id,team_id,teams!inner(id,active,deleted_at)").is("deleted_at", null).is("teams.deleted_at", null).eq("teams.active", true);
   if (categoryIds.length) registrationsQuery = registrationsQuery.in("category_id", categoryIds);
   if (filter.zoneId) registrationsQuery = registrationsQuery.eq("zone_id", filter.zoneId);

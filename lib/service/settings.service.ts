@@ -83,7 +83,13 @@ export async function createCategory(values: CategoryValues) {
   const { data: last } = await supabase.from("categories").select("display_order").eq("tournament_id", values.tournament_id).order("display_order", { ascending: false }).limit(1).maybeSingle();
   const { data, error } = await supabase.from("categories").insert({ tournament_id: values.tournament_id, name: values.name, display_order: (last?.display_order ?? 0) + 1 }).select("id,tournament_id,name").single();
   if (error) throw new Error(error.message);
-  return data;
+  const zones = Array.from({ length: values.zone_count }, (_, index) => ({ category_id: data.id, name: `Zona ${String.fromCharCode(65 + index)}`, max_teams: null, display_order: index + 1 }));
+  const { data: createdZones, error: zonesError } = await supabase.from("zones").insert(zones).select("id,category_id,name,max_teams");
+  if (zonesError) {
+    await supabase.from("categories").update({ deleted_at: new Date().toISOString(), active: false }).eq("id", data.id);
+    throw new Error(zonesError.message);
+  }
+  return { ...data, zones: createdZones ?? [] };
 }
 
 export async function createZone(values: ZoneValues) {

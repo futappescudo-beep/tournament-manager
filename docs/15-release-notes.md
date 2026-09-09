@@ -1,5 +1,15 @@
 # Historial de versiones
 
+## 0.2.14 — Maestro de zonas
+
+* Al crear una categoría se elige entre una y cinco zonas; el sistema genera automáticamente Zona A hasta Zona E.
+* Se elimina el alta manual de zonas para evitar nombres repetidos. El cupo de equipos permanece editable por zona en Configuración.
+
+## 0.2.13 — Catálogo de filtros sin repeticiones
+
+* El dashboard muestra una única opción por categoría y por zona dentro de cada categoría, aun si existían registros históricos duplicados.
+* Las zonas se presentan una sola vez por nombre, sin replicar opciones existentes.
+
 ## 0.2.12 — Reactivación de inscripciones
 
 * Al volver a marcar una zona previamente dada de baja para un equipo, se reactiva su inscripción existente en lugar de crear un duplicado.

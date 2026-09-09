@@ -9,6 +9,7 @@ export const tournamentSchema = z.object({
 export const categorySchema = z.object({
   tournament_id: z.uuid({ error: "Seleccioná un torneo." }),
   name: z.string().trim().min(2, "Ingresá el nombre de la categoría.").max(100),
+  zone_count: z.coerce.number().int().min(1, "Elegí al menos una zona.").max(5, "Se permiten hasta cinco zonas."),
 });
 
 export const zoneSchema = z.object({
