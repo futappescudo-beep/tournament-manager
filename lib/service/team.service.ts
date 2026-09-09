@@ -73,12 +73,26 @@ export async function updateTeam(id: string, values: TeamFormValues) {
     .is("deleted_at", null);
   if (currentError) throw new Error(currentError.message);
 
+  const { data: inactive, error: inactiveError } = await supabase
+    .from("team_category_registrations")
+    .select("id, category_id, zone_id")
+    .eq("team_id", id)
+    .not("deleted_at", "is", null);
+  if (inactiveError) throw new Error(inactiveError.message);
+
   const desired = new Set(values.registrations.map(registrationKey));
   const removals = (current ?? []).filter((registration) => !desired.has(`${registration.category_id}:${registration.zone_id}`));
   const existing = new Set((current ?? []).map((registration) => `${registration.category_id}:${registration.zone_id}`));
   const additions = values.registrations.filter((registration) => !existing.has(registrationKey(registration)));
-  if (additions.length) {
-    const { error } = await supabase.from("team_category_registrations").insert(registrationRows(id, additions));
+  const inactiveByKey = new Map((inactive ?? []).map((registration) => [`${registration.category_id}:${registration.zone_id}`, registration.id]));
+  const restorations = additions.map((registration) => inactiveByKey.get(registrationKey(registration))).filter((registrationId): registrationId is string => Boolean(registrationId));
+  const newRegistrations = additions.filter((registration) => !inactiveByKey.has(registrationKey(registration)));
+  if (restorations.length) {
+    const { error } = await supabase.from("team_category_registrations").update({ deleted_at: null }).in("id", restorations);
+    if (error) throw new Error(error.message);
+  }
+  if (newRegistrations.length) {
+    const { error } = await supabase.from("team_category_registrations").insert(registrationRows(id, newRegistrations));
     if (error) throw new Error(error.message);
   }
   if (removals.length) {

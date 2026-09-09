@@ -1,5 +1,9 @@
 # Historial de versiones
 
+## 0.2.12 — Reactivación de inscripciones
+
+* Al volver a marcar una zona previamente dada de baja para un equipo, se reactiva su inscripción existente en lugar de crear un duplicado.
+
 ## 0.2.11 — Inscripción de equipos sin pérdida de datos
 
 * Al editar zonas de un equipo, las nuevas inscripciones se guardan antes de cerrar las anteriores; un error ya no puede dejar al equipo sin zona.
