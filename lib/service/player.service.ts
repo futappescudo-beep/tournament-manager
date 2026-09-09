@@ -32,11 +32,13 @@ export async function getPlayers() {
 export async function getTeamRegistrationOptions(): Promise<TeamRegistrationOption[]> {
   await requireUser();
   const supabase = await createClient();
-  const { data, error } = await supabase.from("team_category_registrations").select("id, display_name, teams(name), categories(name), zones(name)").is("deleted_at", null).order("created_at");
+  const { data, error } = await supabase.from("team_category_registrations").select("id, teams(name), categories(name,tournaments(name)), zones(name)").is("deleted_at", null).order("created_at");
   if (error) throw new Error(error.message);
   return (data ?? []).map((row) => {
-    const item = row as unknown as { id: string; display_name: string | null; teams: { name: string | null } | null; categories: { name: string | null } | null; zones: { name: string | null } | null };
-    return { id: item.id, label: item.display_name || [item.teams?.name, item.categories?.name, item.zones?.name].filter(Boolean).join(" · ") || "Equipo sin nombre" };
+    const item = row as unknown as { id: string; teams: { name: string | null } | { name: string | null }[] | null; categories: { name: string | null; tournaments: { name: string | null } | { name: string | null }[] | null } | { name: string | null; tournaments: { name: string | null } | { name: string | null }[] | null }[] | null; zones: { name: string | null } | { name: string | null }[] | null };
+    const one = <T,>(value: T | T[] | null) => Array.isArray(value) ? value[0] : value;
+    const team = one(item.teams); const category = one(item.categories); const zone = one(item.zones); const tournament = one(category?.tournaments ?? null);
+    return { id: item.id, label: [tournament?.name, team?.name, category?.name, zone?.name].filter(Boolean).join(" · ") || "Equipo sin nombre" };
   });
 }
 

@@ -1,5 +1,10 @@
 # Historial de versiones
 
+## 0.2.2 — Selector de inscripción y errores de jugador
+
+* El selector de alta muestra `Torneo · Equipo · Categoría · Zona`.
+* Los documentos duplicados y asignaciones inválidas se informan como avisos dentro de la interfaz, sin mostrar un error técnico de servidor.
+
 ## 0.2.1 — Corrección del flujo de planteles
 
 * En **Jugadores** queda una única acción de alta: **Nuevo jugador**.

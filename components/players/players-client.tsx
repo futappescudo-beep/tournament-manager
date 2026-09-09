@@ -2,11 +2,18 @@
 
 import { useMemo, useState } from "react";
 import { Pencil, Plus, Search, Trash2, UsersRound } from "lucide-react";
+import { toast } from "sonner";
 import type { Player, PlayerAssignment, TeamRegistrationOption } from "@/lib/types/player";
 import { assignPlayerToTeam, createPlayer, deletePlayer, updatePlayer } from "@/lib/actions/players";
 import type { PlayerAssignmentValues, PlayerCreateValues } from "@/lib/validations/players";
 import { PlayerDialog } from "./players-dialog";
 import { PlayerAssignmentDialog } from "./player-assignment-dialog";
+
+function messageFor(error: unknown) {
+  const message = error instanceof Error ? error.message : "No se pudo guardar el jugador.";
+  if (message.includes("uq_players_document") || message.includes("duplicate key")) return "Ya existe un jugador con ese documento. Buscalo en la lista y usá el botón Equipo para asignarlo.";
+  return message;
+}
 
 export function PlayersClient({ players: initialPlayers, teamRegistrations }: { players: Player[]; teamRegistrations: TeamRegistrationOption[] }) {
   const [players, setPlayers] = useState(initialPlayers);
@@ -37,7 +44,7 @@ export function PlayersClient({ players: initialPlayers, teamRegistrations }: { 
       }
       setOpen(false);
       setSelected(null);
-    } finally { setLoading(false); }
+    } catch (error) { toast.error(messageFor(error)); } finally { setLoading(false); }
   }
 
   async function saveAssignment(values: PlayerAssignmentValues) {
@@ -47,7 +54,7 @@ export function PlayersClient({ players: initialPlayers, teamRegistrations }: { 
       const label = teamRegistrations.find((item) => item.id === values.team_registration_id)?.label ?? "Equipo asignado";
       setPlayers((current) => current.map((player) => player.id === values.player_id ? { ...player, assignments: [...player.assignments.filter((assignment) => assignment.team_registration_id !== values.team_registration_id), { id: "new", team_registration_id: values.team_registration_id, shirt_number: values.shirt_number, is_captain: values.is_captain, is_goalkeeper: values.is_goalkeeper, label }] } : player));
       setAssignmentOpen(false);
-    } finally { setLoading(false); }
+    } catch (error) { toast.error(messageFor(error)); } finally { setLoading(false); }
   }
 
   async function remove(player: Player) {
