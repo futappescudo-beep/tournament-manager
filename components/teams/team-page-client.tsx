@@ -101,7 +101,8 @@ const handleSave = async (
     setLoading(true);
 
     if (selectedTeam) {
-      await updateTeam(selectedTeam.id, values);
+      const result = await updateTeam(selectedTeam.id, values);
+      if (result.error) throw new Error(result.error);
 
       toast.success("Equipo actualizado correctamente.");
     } else {
@@ -116,8 +117,7 @@ const handleSave = async (
     setSelectedTeam(null);
   } catch (error) {
     console.error(error);
-
-    toast.error("No fue posible guardar el equipo.");
+    toast.error(error instanceof Error ? error.message : "No fue posible guardar el equipo.");
   } finally {
     setLoading(false);
   }

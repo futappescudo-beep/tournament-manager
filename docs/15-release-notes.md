@@ -1,5 +1,9 @@
 # Historial de versiones
 
+## 0.2.9 — Mensajes claros al inscribir equipos
+
+* Al guardar una zona de un equipo, los rechazos de validación se muestran en pantalla con su motivo real, incluido el cupo máximo de la zona.
+
 ## 0.2.8 — Visibilidad de equipos sin zona
 
 * El selector de Jugadores muestra todos los equipos activos, aun si todavía no tienen una zona vigente.

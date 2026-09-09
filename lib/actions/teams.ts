@@ -30,12 +30,15 @@ export async function updateTeam(
   id: string,
   values: TeamFormValues
 ) {
-  const data = teamSchema.parse(values);
-
-  await TeamService.updateTeam(id, data);
-
-  revalidatePath("/teams");
-  revalidatePath("/dashboard");
+  try {
+    const data = teamSchema.parse(values);
+    await TeamService.updateTeam(id, data);
+    revalidatePath("/teams");
+    revalidatePath("/dashboard");
+    return { error: null };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "No se pudo guardar el equipo." };
+  }
 }
 
 export async function deleteTeam(id: string) {
