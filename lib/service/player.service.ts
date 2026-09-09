@@ -32,13 +32,15 @@ export async function getPlayers() {
 export async function getTeamRegistrationOptions(): Promise<TeamRegistrationOption[]> {
   await requireUser();
   const supabase = await createClient();
-  const { data, error } = await supabase.from("team_category_registrations").select("id, teams(name), categories(name,tournaments(name)), zones(name)").is("deleted_at", null).order("created_at");
+  const { data, error } = await supabase.from("team_category_registrations").select("id,team_id,teams(name)").is("deleted_at", null).order("created_at");
   if (error) throw new Error(error.message);
-  return (data ?? []).map((row) => {
-    const item = row as unknown as { id: string; teams: { name: string | null } | { name: string | null }[] | null; categories: { name: string | null; tournaments: { name: string | null } | { name: string | null }[] | null } | { name: string | null; tournaments: { name: string | null } | { name: string | null }[] | null }[] | null; zones: { name: string | null } | { name: string | null }[] | null };
-    const one = <T,>(value: T | T[] | null) => Array.isArray(value) ? value[0] : value;
-    const team = one(item.teams); const category = one(item.categories); const zone = one(item.zones); const tournament = one(category?.tournaments ?? null);
-    return { id: item.id, label: [tournament?.name, team?.name, category?.name, zone?.name].filter(Boolean).join(" · ") || "Equipo sin nombre" };
+  const seenTeamIds = new Set<string>();
+  return (data ?? []).flatMap((row) => {
+    const item = row as unknown as { id: string; team_id: string; teams: { name: string | null } | { name: string | null }[] | null };
+    if (seenTeamIds.has(item.team_id)) return [];
+    seenTeamIds.add(item.team_id);
+    const team = Array.isArray(item.teams) ? item.teams[0] : item.teams;
+    return [{ id: item.id, label: team?.name ?? "Equipo sin nombre" }];
   });
 }
 

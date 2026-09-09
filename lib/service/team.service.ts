@@ -117,8 +117,20 @@ export async function getTeamRoster(teamId: string) {
   const { data: registrations, error: registrationsError } = await supabase.from("team_category_registrations").select("id,display_name,categories(name),zones(name)").eq("team_id", teamId).is("deleted_at", null);
   if (registrationsError) throw new Error(registrationsError.message);
   const registrationIds = (registrations ?? []).map((registration) => registration.id);
-  if (!registrationIds.length) return { team, registrations: [] as Array<{ id: string; label: string }>, players: [] as Array<Record<string, unknown>> };
+  const [allPlayersResult, activeAssignmentsResult] = await Promise.all([
+    supabase.from("players").select("id,first_name,last_name,document_number,document_type,birth_date,photo_url").is("deleted_at", null).order("last_name"),
+    supabase.from("player_team_registrations").select("player_id,team_category_registrations(team_id)").is("deleted_at", null).is("left_at", null),
+  ]);
+  if (allPlayersResult.error) throw new Error(allPlayersResult.error.message);
+  if (activeAssignmentsResult.error) throw new Error(activeAssignmentsResult.error.message);
+  const assignedToOtherTeam = new Set((activeAssignmentsResult.data ?? []).flatMap((assignment) => {
+    const registration = assignment.team_category_registrations as unknown as { team_id: string } | { team_id: string }[] | null;
+    const assignedTeamId = Array.isArray(registration) ? registration[0]?.team_id : registration?.team_id;
+    return assignedTeamId && assignedTeamId !== teamId ? [assignment.player_id] : [];
+  }));
+  const availablePlayers = (allPlayersResult.data ?? []).filter((player) => !assignedToOtherTeam.has(player.id));
+  if (!registrationIds.length) return { team, registrations: [] as Array<{ id: string; label: string }>, players: [] as Array<Record<string, unknown>>, availablePlayers };
   const { data: players, error: playersError } = await supabase.from("player_team_registrations").select("id,shirt_number,is_captain,is_goalkeeper,team_registration_id,players(first_name,last_name,document_number,photo_url)").in("team_registration_id", registrationIds).is("deleted_at", null).is("left_at", null).order("shirt_number");
   if (playersError) throw new Error(playersError.message);
-  return { team, registrations: (registrations ?? []).map((registration) => ({ id: registration.id, label: registration.display_name ?? "Equipo" })), players: players ?? [] };
+  return { team, registrations: (registrations ?? []).map((registration) => ({ id: registration.id, label: team.name })), players: players ?? [], availablePlayers };
 }

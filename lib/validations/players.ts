@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 export const playerSchema = z.object({
-  document_type: z.string().trim().min(1, "Selecciona el tipo de documento."),
-  document_number: z.string().trim().min(5, "Ingresa un documento valido.").max(30),
+  document_type: z.literal("DNI"),
+  document_number: z.string().trim().regex(/^\d+$/, "El DNI debe contener solo números.").min(5, "Ingresa un DNI válido.").max(30),
   first_name: z.string().trim().min(2, "Ingresa el nombre.").max(80),
   last_name: z.string().trim().min(2, "Ingresa el apellido.").max(80),
   birth_date: z.string().optional().or(z.literal("")),

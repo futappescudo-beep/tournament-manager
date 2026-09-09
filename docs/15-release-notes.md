@@ -1,5 +1,11 @@
 # Historial de versiones
 
+## 0.2.3 — Simplificación de la asignación de jugadores
+
+* El alta de jugador usa Nombre, Apellido, DNI numérico, Fecha de nacimiento y Equipo.
+* Se eliminan dorsal, capitán y arquero de los formularios de alta y asignación.
+* El plantel vacío permite elegir solo jugadores que pueden incorporarse al equipo actual, evitando errores por clubes incompatibles.
+
 ## 0.2.2 — Selector de inscripción y errores de jugador
 
 * El selector de alta muestra `Torneo · Equipo · Categoría · Zona`.
