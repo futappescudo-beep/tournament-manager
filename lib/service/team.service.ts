@@ -27,21 +27,6 @@ function teamPayload(values: TeamFormValues) {
   };
 }
 
-async function assertZoneCapacity(registrations: TeamRegistration[]) {
-  if (!registrations.length) return;
-  const supabase = await createClient();
-  for (const registration of registrations) {
-    const { data: zones, error: zoneError } = await supabase.from("zones").select("name,max_teams").eq("id", registration.zone_id).is("deleted_at", null).limit(1);
-    if (zoneError) throw new Error(zoneError.message);
-    const zone = zones?.[0];
-    if (!zone) throw new Error("La zona seleccionada ya no está disponible. Actualizá la página e intentá nuevamente.");
-    if (zone.max_teams === null) continue;
-    const { count, error: countError } = await supabase.from("team_category_registrations").select("id", { count: "exact", head: true }).eq("zone_id", registration.zone_id).is("deleted_at", null);
-    if (countError) throw new Error(countError.message);
-    if ((count ?? 0) >= zone.max_teams) throw new Error(`La ${zone.name} alcanzó su cupo de ${zone.max_teams} equipos.`);
-  }
-}
-
 export async function getTeams() {
   await requireUser();
   const supabase = await createClient();
@@ -57,7 +42,6 @@ export async function getTeams() {
 
 export async function createTeam(values: TeamFormValues) {
   await requireUser();
-  await assertZoneCapacity(values.registrations);
   const supabase = await createClient();
   const { data: team, error: teamError } = await supabase
     .from("teams")
@@ -91,15 +75,14 @@ export async function updateTeam(id: string, values: TeamFormValues) {
 
   const desired = new Set(values.registrations.map(registrationKey));
   const removals = (current ?? []).filter((registration) => !desired.has(`${registration.category_id}:${registration.zone_id}`));
-  if (removals.length) {
-    const { error } = await supabase.from("team_category_registrations").update({ deleted_at: new Date().toISOString() }).in("id", removals.map((registration) => registration.id));
-    if (error) throw new Error(error.message);
-  }
   const existing = new Set((current ?? []).map((registration) => `${registration.category_id}:${registration.zone_id}`));
   const additions = values.registrations.filter((registration) => !existing.has(registrationKey(registration)));
   if (additions.length) {
-    await assertZoneCapacity(additions);
     const { error } = await supabase.from("team_category_registrations").insert(registrationRows(id, additions));
+    if (error) throw new Error(error.message);
+  }
+  if (removals.length) {
+    const { error } = await supabase.from("team_category_registrations").update({ deleted_at: new Date().toISOString() }).in("id", removals.map((registration) => registration.id));
     if (error) throw new Error(error.message);
   }
 }

@@ -1,5 +1,10 @@
 # Historial de versiones
 
+## 0.2.11 — Inscripción de equipos sin pérdida de datos
+
+* Al editar zonas de un equipo, las nuevas inscripciones se guardan antes de cerrar las anteriores; un error ya no puede dejar al equipo sin zona.
+* Se elimina la validación de disponibilidad que estaba rechazando zonas activas visibles en la pantalla.
+
 ## 0.2.10 — Guardado robusto de zonas
 
 * La validación de cupos de zona ya no depende de una respuesta de fila única de Supabase, evitando el error técnico al guardar una inscripción.
