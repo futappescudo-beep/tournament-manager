@@ -20,5 +20,8 @@ export type PlayerAssignment = {
 
 export type TeamRegistrationOption = {
   id: string;
+  team_id: string;
+  team_name: string;
+  zone_name: string;
   label: string;
 };

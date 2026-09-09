@@ -1,5 +1,10 @@
 # Historial de versiones
 
+## 0.2.7 — Asignación por equipo y zona
+
+* En Jugadores, el alta y la asignación usan dos selectores: primero Equipo y luego Zona.
+* Las zonas se filtran de acuerdo con el equipo elegido y la asignación se guarda en la inscripción correcta.
+
 ## 0.2.6 — Inscripciones claras y limpieza de catálogo
 
 * El alta de equipo muestra sus posibles inscripciones en una tabla con Torneo, Categoría, Zona y estado de participación.

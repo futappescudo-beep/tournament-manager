@@ -34,19 +34,20 @@ export async function getTeamRegistrationOptions(): Promise<TeamRegistrationOpti
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("team_category_registrations")
-    .select("id,team_id,teams!inner(name,active,deleted_at)")
+    .select("id,team_id,teams!inner(name,active,deleted_at),categories(name),zones(name)")
     .is("deleted_at", null)
     .is("teams.deleted_at", null)
     .eq("teams.active", true)
     .order("created_at");
   if (error) throw new Error(error.message);
-  const seenTeamIds = new Set<string>();
-  return (data ?? []).flatMap((row) => {
-    const item = row as unknown as { id: string; team_id: string; teams: { name: string | null } | { name: string | null }[] | null };
-    if (seenTeamIds.has(item.team_id)) return [];
-    seenTeamIds.add(item.team_id);
+  return (data ?? []).map((row) => {
+    const item = row as unknown as { id: string; team_id: string; teams: { name: string | null } | { name: string | null }[] | null; categories: { name: string | null } | { name: string | null }[] | null; zones: { name: string | null } | { name: string | null }[] | null };
     const team = Array.isArray(item.teams) ? item.teams[0] : item.teams;
-    return [{ id: item.id, label: team?.name ?? "Equipo sin nombre" }];
+    const category = Array.isArray(item.categories) ? item.categories[0] : item.categories;
+    const zone = Array.isArray(item.zones) ? item.zones[0] : item.zones;
+    const teamName = team?.name ?? "Equipo sin nombre";
+    const zoneName = [category?.name, zone?.name].filter(Boolean).join(" · ") || "Zona sin nombre";
+    return { id: item.id, team_id: item.team_id, team_name: teamName, zone_name: zoneName, label: `${teamName} · ${zoneName}` };
   });
 }
 
