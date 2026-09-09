@@ -142,5 +142,14 @@ export async function getTeamRoster(teamId: string) {
   if (!registrationIds.length) return { team, registrations: [] as Array<{ id: string; label: string }>, players: [] as Array<Record<string, unknown>>, availablePlayers };
   const { data: players, error: playersError } = await supabase.from("player_team_registrations").select("id,shirt_number,is_captain,is_goalkeeper,team_registration_id,players(first_name,last_name,document_number,photo_url)").in("team_registration_id", registrationIds).is("deleted_at", null).is("left_at", null).order("shirt_number");
   if (playersError) throw new Error(playersError.message);
-  return { team, registrations: (registrations ?? []).map((registration) => ({ id: registration.id, label: team.name })), players: players ?? [], availablePlayers };
+  return {
+    team,
+    registrations: (registrations ?? []).map((registration) => {
+      const category = Array.isArray(registration.categories) ? registration.categories[0] : registration.categories;
+      const zone = Array.isArray(registration.zones) ? registration.zones[0] : registration.zones;
+      return { id: registration.id, label: [category?.name, zone?.name].filter(Boolean).join(" · ") || "Zona sin nombre" };
+    }),
+    players: players ?? [],
+    availablePlayers,
+  };
 }

@@ -1,5 +1,11 @@
 # Historial de versiones
 
+## 0.2.5 — Carga por zona desde el plantel
+
+* **Equipos → Ver plantel** ofrece siempre la acción **Agregar jugador**.
+* La asignación desde el plantel permite elegir el jugador existente y la categoría/zona en la que juega con ese equipo.
+* El modal para crear o editar equipos reduce su ancho y permite desplazamiento vertical en pantallas con poca altura.
+
 ## 0.2.4 — Baja consistente de equipos
 
 * El selector de equipos para jugadores excluye equipos inactivos y dados de baja, incluso si conservaban inscripciones históricas.
