@@ -1,5 +1,11 @@
 # Historial de versiones
 
+## 0.2.16 — Filtros dinámicos en el dashboard
+
+- Los filtros de torneo, categoría y zona se aplican automáticamente, sin requerir un botón adicional.
+- Las opciones son dependientes: al elegir un torneo se actualizan las categorías y al elegir una categoría se actualizan las zonas disponibles.
+- El catálogo del dashboard unifica rótulos duplicados históricos aunque tengan diferencias de espacios, tildes o formato.
+
 ## 0.2.15 — Recursos para programar el fixture
 
 * Configuración incorpora maestros de Canchas y Árbitros, con alta y baja lógica.
