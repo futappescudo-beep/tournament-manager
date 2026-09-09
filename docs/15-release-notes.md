@@ -1,5 +1,10 @@
 # Historial de versiones
 
+## 0.2.8 — Visibilidad de equipos sin zona
+
+* El selector de Jugadores muestra todos los equipos activos, aun si todavía no tienen una zona vigente.
+* Si un equipo no tiene zona activa, el selector de zona lo informa y evita una asignación incompleta.
+
 ## 0.2.7 — Asignación por equipo y zona
 
 * En Jugadores, el alta y la asignación usan dos selectores: primero Equipo y luego Zona.

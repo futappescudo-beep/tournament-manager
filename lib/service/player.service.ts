@@ -32,22 +32,25 @@ export async function getPlayers() {
 export async function getTeamRegistrationOptions(): Promise<TeamRegistrationOption[]> {
   await requireUser();
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("team_category_registrations")
-    .select("id,team_id,teams!inner(name,active,deleted_at),categories(name),zones(name)")
-    .is("deleted_at", null)
-    .is("teams.deleted_at", null)
-    .eq("teams.active", true)
-    .order("created_at");
-  if (error) throw new Error(error.message);
-  return (data ?? []).map((row) => {
-    const item = row as unknown as { id: string; team_id: string; teams: { name: string | null } | { name: string | null }[] | null; categories: { name: string | null } | { name: string | null }[] | null; zones: { name: string | null } | { name: string | null }[] | null };
-    const team = Array.isArray(item.teams) ? item.teams[0] : item.teams;
+  const [teamsResult, registrationsResult] = await Promise.all([
+    supabase.from("teams").select("id,name").is("deleted_at", null).eq("active", true).order("name"),
+    supabase.from("team_category_registrations").select("id,team_id,categories(name),zones(name)").is("deleted_at", null).order("created_at"),
+  ]);
+  if (teamsResult.error) throw new Error(teamsResult.error.message);
+  if (registrationsResult.error) throw new Error(registrationsResult.error.message);
+  const teamsById = new Map((teamsResult.data ?? []).map((team) => [team.id, team.name]));
+  const registrations = (registrationsResult.data ?? []).flatMap((row) => {
+    const item = row as unknown as { id: string; team_id: string; categories: { name: string | null } | { name: string | null }[] | null; zones: { name: string | null } | { name: string | null }[] | null };
+    const teamName = teamsById.get(item.team_id);
+    if (!teamName) return [];
     const category = Array.isArray(item.categories) ? item.categories[0] : item.categories;
     const zone = Array.isArray(item.zones) ? item.zones[0] : item.zones;
-    const teamName = team?.name ?? "Equipo sin nombre";
     const zoneName = [category?.name, zone?.name].filter(Boolean).join(" · ") || "Zona sin nombre";
-    return { id: item.id, team_id: item.team_id, team_name: teamName, zone_name: zoneName, label: `${teamName} · ${zoneName}` };
+    return [{ id: item.id, team_id: item.team_id, team_name: teamName, zone_name: zoneName, label: `${teamName} · ${zoneName}` }];
+  });
+  return (teamsResult.data ?? []).flatMap((team) => {
+    const teamRegistrations = registrations.filter((registration) => registration.team_id === team.id);
+    return teamRegistrations.length ? teamRegistrations : [{ id: "", team_id: team.id, team_name: team.name, zone_name: "", label: team.name }];
   });
 }
 
