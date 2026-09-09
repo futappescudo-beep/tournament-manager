@@ -1,7 +1,7 @@
 import type { TeamFormValues } from "@/lib/validations/teams";
 
 export interface ZoneOption { id: string; name: string; }
-export interface CategoryOption { id: string; name: string; zones: ZoneOption[]; }
+export interface CategoryOption { id: string; name: string; tournament_name: string; zones: ZoneOption[]; }
 
 export interface TeamRegistration {
   id: string;

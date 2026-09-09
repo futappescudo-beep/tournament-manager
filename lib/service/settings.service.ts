@@ -77,6 +77,9 @@ export async function deleteTournament(id: string) {
 
 export async function createCategory(values: CategoryValues) {
   const supabase = await requireSuperAdmin();
+  const { data: duplicate, error: duplicateError } = await supabase.from("categories").select("id").eq("tournament_id", values.tournament_id).ilike("name", values.name).is("deleted_at", null).maybeSingle();
+  if (duplicateError) throw new Error(duplicateError.message);
+  if (duplicate) throw new Error("Ya existe una categoría con ese nombre en este torneo.");
   const { data: last } = await supabase.from("categories").select("display_order").eq("tournament_id", values.tournament_id).order("display_order", { ascending: false }).limit(1).maybeSingle();
   const { data, error } = await supabase.from("categories").insert({ tournament_id: values.tournament_id, name: values.name, display_order: (last?.display_order ?? 0) + 1 }).select("id,tournament_id,name").single();
   if (error) throw new Error(error.message);
@@ -85,6 +88,9 @@ export async function createCategory(values: CategoryValues) {
 
 export async function createZone(values: ZoneValues) {
   const supabase = await requireSuperAdmin();
+  const { data: duplicate, error: duplicateError } = await supabase.from("zones").select("id").eq("category_id", values.category_id).ilike("name", values.name).is("deleted_at", null).maybeSingle();
+  if (duplicateError) throw new Error(duplicateError.message);
+  if (duplicate) throw new Error("Ya existe una zona con ese nombre en esta categoría.");
   const { data: last } = await supabase.from("zones").select("display_order").eq("category_id", values.category_id).order("display_order", { ascending: false }).limit(1).maybeSingle();
   const { data, error } = await supabase.from("zones").insert({ category_id: values.category_id, name: values.name, max_teams: values.max_teams, display_order: (last?.display_order ?? 0) + 1 }).select("id,category_id,name,max_teams").single();
   if (error) throw new Error(error.message);
@@ -94,5 +100,39 @@ export async function createZone(values: ZoneValues) {
 export async function updateZoneCapacity(zoneId: string, maxTeams: number | null) {
   const supabase = await requireSuperAdmin();
   const { error } = await supabase.from("zones").update({ max_teams: maxTeams }).eq("id", zoneId).is("deleted_at", null);
+  if (error) throw new Error(error.message);
+}
+
+export async function deleteZone(zoneId: string) {
+  const supabase = await requireSuperAdmin();
+  const now = new Date().toISOString();
+  const { data: registrations, error: registrationsError } = await supabase.from("team_category_registrations").select("id").eq("zone_id", zoneId).is("deleted_at", null);
+  if (registrationsError) throw new Error(registrationsError.message);
+  const registrationIds = (registrations ?? []).map((registration) => registration.id);
+  if (registrationIds.length) {
+    const { error: playersError } = await supabase.from("player_team_registrations").update({ left_at: now.slice(0, 10), deleted_at: now }).in("team_registration_id", registrationIds).is("deleted_at", null);
+    if (playersError) throw new Error(playersError.message);
+    const { error: registrationsError } = await supabase.from("team_category_registrations").update({ deleted_at: now }).in("id", registrationIds).is("deleted_at", null);
+    if (registrationsError) throw new Error(registrationsError.message);
+  }
+  const { error } = await supabase.from("zones").update({ deleted_at: now }).eq("id", zoneId).is("deleted_at", null);
+  if (error) throw new Error(error.message);
+}
+
+export async function deleteCategory(categoryId: string) {
+  const supabase = await requireSuperAdmin();
+  const now = new Date().toISOString();
+  const { data: registrations, error: registrationsError } = await supabase.from("team_category_registrations").select("id").eq("category_id", categoryId).is("deleted_at", null);
+  if (registrationsError) throw new Error(registrationsError.message);
+  const registrationIds = (registrations ?? []).map((registration) => registration.id);
+  if (registrationIds.length) {
+    const { error: playersError } = await supabase.from("player_team_registrations").update({ left_at: now.slice(0, 10), deleted_at: now }).in("team_registration_id", registrationIds).is("deleted_at", null);
+    if (playersError) throw new Error(playersError.message);
+    const { error: registrationsError } = await supabase.from("team_category_registrations").update({ deleted_at: now }).in("id", registrationIds).is("deleted_at", null);
+    if (registrationsError) throw new Error(registrationsError.message);
+  }
+  const { error: zonesError } = await supabase.from("zones").update({ deleted_at: now }).eq("category_id", categoryId).is("deleted_at", null);
+  if (zonesError) throw new Error(zonesError.message);
+  const { error } = await supabase.from("categories").update({ deleted_at: now, active: false }).eq("id", categoryId).is("deleted_at", null);
   if (error) throw new Error(error.message);
 }

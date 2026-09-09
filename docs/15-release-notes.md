@@ -1,5 +1,11 @@
 # Historial de versiones
 
+## 0.2.6 — Inscripciones claras y limpieza de catálogo
+
+* El alta de equipo muestra sus posibles inscripciones en una tabla con Torneo, Categoría, Zona y estado de participación.
+* Configuración permite dar de baja categorías y zonas; las inscripciones y jugadores activos relacionados se cierran y el historial se conserva.
+* Se previene el alta de categorías duplicadas en un torneo y de zonas duplicadas dentro de una categoría.
+
 ## 0.2.5 — Carga por zona desde el plantel
 
 * **Equipos → Ver plantel** ofrece siempre la acción **Agregar jugador**.

@@ -36,3 +36,5 @@ export type DeleteProfileValues = z.infer<typeof deleteProfileSchema>;
 
 export const zoneCapacitySchema = z.object({ zoneId: z.uuid(), maxTeams: z.coerce.number().int().min(2).max(100).nullable() });
 export const tournamentIdSchema = z.uuid();
+export const categoryIdSchema = z.uuid();
+export const zoneIdSchema = z.uuid();
