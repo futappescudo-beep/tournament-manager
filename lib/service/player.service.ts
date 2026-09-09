@@ -32,7 +32,13 @@ export async function getPlayers() {
 export async function getTeamRegistrationOptions(): Promise<TeamRegistrationOption[]> {
   await requireUser();
   const supabase = await createClient();
-  const { data, error } = await supabase.from("team_category_registrations").select("id,team_id,teams(name)").is("deleted_at", null).order("created_at");
+  const { data, error } = await supabase
+    .from("team_category_registrations")
+    .select("id,team_id,teams!inner(name,active,deleted_at)")
+    .is("deleted_at", null)
+    .is("teams.deleted_at", null)
+    .eq("teams.active", true)
+    .order("created_at");
   if (error) throw new Error(error.message);
   const seenTeamIds = new Set<string>();
   return (data ?? []).flatMap((row) => {
@@ -72,14 +78,24 @@ export async function deletePlayer(id: string) {
 export async function assignPlayerToTeam(values: PlayerAssignmentValues) {
   await requireUser();
   const supabase = await createClient();
-  const { data: targetRegistration, error: targetError } = await supabase.from("team_category_registrations").select("id,team_id").eq("id", values.team_registration_id).is("deleted_at", null).single();
-  if (targetError) throw new Error(targetError.message);
-  const { data: activeAssignments, error: activeError } = await supabase.from("player_team_registrations").select("id,team_registration_id,team_category_registrations(team_id)").eq("player_id", values.player_id).is("deleted_at", null).is("left_at", null);
+  const { data: activeRegistrations, error: registrationsError } = await supabase
+    .from("team_category_registrations")
+    .select("id,team_id,teams!inner(active,deleted_at)")
+    .is("deleted_at", null)
+    .is("teams.deleted_at", null)
+    .eq("teams.active", true);
+  if (registrationsError) throw new Error(registrationsError.message);
+  const registrationsById = new Map((activeRegistrations ?? []).map((registration) => [registration.id, registration]));
+  const targetRegistration = registrationsById.get(values.team_registration_id);
+  if (!targetRegistration) throw new Error("El equipo seleccionado ya no está activo. Actualizá la página y elegí otro equipo.");
+  const activeRegistrationIds = [...registrationsById.keys()];
+  const { data: activeAssignments, error: activeError } = activeRegistrationIds.length
+    ? await supabase.from("player_team_registrations").select("id,team_registration_id").eq("player_id", values.player_id).is("deleted_at", null).is("left_at", null).in("team_registration_id", activeRegistrationIds)
+    : { data: [], error: null };
   if (activeError) throw new Error(activeError.message);
   const existing = (activeAssignments ?? []).find((assignment) => assignment.team_registration_id === values.team_registration_id);
   const belongsToOtherTeam = (activeAssignments ?? []).some((assignment) => {
-    const registration = assignment.team_category_registrations as unknown as { team_id: string } | { team_id: string }[] | null;
-    const teamId = Array.isArray(registration) ? registration[0]?.team_id : registration?.team_id;
+    const teamId = registrationsById.get(assignment.team_registration_id)?.team_id;
     return teamId && teamId !== targetRegistration.team_id;
   });
   if (belongsToOtherTeam) throw new Error("Un jugador no puede estar activo en equipos distintos dentro del mismo torneo.");

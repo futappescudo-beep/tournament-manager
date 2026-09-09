@@ -43,4 +43,5 @@ export async function deleteTeam(id: string) {
 
   revalidatePath("/teams");
   revalidatePath("/dashboard");
+  revalidatePath("/players");
 }

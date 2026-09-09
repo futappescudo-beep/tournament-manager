@@ -105,7 +105,17 @@ export async function updateTeam(id: string, values: TeamFormValues) {
 export async function deleteTeam(id: string) {
   await requireUser();
   const supabase = await createClient();
-  const { error } = await supabase.from("teams").update({ deleted_at: new Date().toISOString(), active: false }).eq("id", id).is("deleted_at", null);
+  const now = new Date().toISOString();
+  const { data: registrations, error: registrationsError } = await supabase.from("team_category_registrations").select("id").eq("team_id", id).is("deleted_at", null);
+  if (registrationsError) throw new Error(registrationsError.message);
+  const registrationIds = (registrations ?? []).map((registration) => registration.id);
+  if (registrationIds.length) {
+    const { error: playerRegistrationsError } = await supabase.from("player_team_registrations").update({ left_at: now.slice(0, 10), deleted_at: now }).in("team_registration_id", registrationIds).is("deleted_at", null);
+    if (playerRegistrationsError) throw new Error(playerRegistrationsError.message);
+    const { error: teamRegistrationsError } = await supabase.from("team_category_registrations").update({ deleted_at: now }).in("id", registrationIds).is("deleted_at", null);
+    if (teamRegistrationsError) throw new Error(teamRegistrationsError.message);
+  }
+  const { error } = await supabase.from("teams").update({ deleted_at: now, active: false }).eq("id", id).is("deleted_at", null);
   if (error) throw new Error(error.message);
 }
 

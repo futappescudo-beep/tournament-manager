@@ -1,5 +1,11 @@
 # Historial de versiones
 
+## 0.2.4 — Baja consistente de equipos
+
+* El selector de equipos para jugadores excluye equipos inactivos y dados de baja, incluso si conservaban inscripciones históricas.
+* Al dar de baja un equipo, también se cierran sus inscripciones y las asignaciones activas de jugadores.
+* Se incorpora una migración para limpiar inscripciones activas residuales de equipos que ya estaban dados de baja.
+
 ## 0.2.3 — Simplificación de la asignación de jugadores
 
 * El alta de jugador usa Nombre, Apellido, DNI numérico, Fecha de nacimiento y Equipo.
