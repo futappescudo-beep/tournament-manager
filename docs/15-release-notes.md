@@ -1,5 +1,9 @@
 # Historial de versiones
 
+## 0.2.10 — Guardado robusto de zonas
+
+* La validación de cupos de zona ya no depende de una respuesta de fila única de Supabase, evitando el error técnico al guardar una inscripción.
+
 ## 0.2.9 — Mensajes claros al inscribir equipos
 
 * Al guardar una zona de un equipo, los rechazos de validación se muestran en pantalla con su motivo real, incluido el cupo máximo de la zona.

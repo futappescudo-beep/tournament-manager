@@ -31,8 +31,10 @@ async function assertZoneCapacity(registrations: TeamRegistration[]) {
   if (!registrations.length) return;
   const supabase = await createClient();
   for (const registration of registrations) {
-    const { data: zone, error: zoneError } = await supabase.from("zones").select("name,max_teams").eq("id", registration.zone_id).is("deleted_at", null).single();
+    const { data: zones, error: zoneError } = await supabase.from("zones").select("name,max_teams").eq("id", registration.zone_id).is("deleted_at", null).limit(1);
     if (zoneError) throw new Error(zoneError.message);
+    const zone = zones?.[0];
+    if (!zone) throw new Error("La zona seleccionada ya no está disponible. Actualizá la página e intentá nuevamente.");
     if (zone.max_teams === null) continue;
     const { count, error: countError } = await supabase.from("team_category_registrations").select("id", { count: "exact", head: true }).eq("zone_id", registration.zone_id).is("deleted_at", null);
     if (countError) throw new Error(countError.message);
