@@ -1,0 +1,96 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+}
+
+:root {
+  --background: #090a0a;
+  --foreground: #f7f3e9;
+  --card: #121313;
+  --card-foreground: #f7f3e9;
+  --popover: #151616;
+  --popover-foreground: #f7f3e9;
+  --primary: #a70d14;
+  --primary-foreground: #fff8e9;
+  --secondary: #29231d;
+  --secondary-foreground: #f5d789;
+  --muted: #1a1b1b;
+  --muted-foreground: #a9a39a;
+  --accent: #332918;
+  --accent-foreground: #f5d789;
+  --destructive: #d33636;
+  --border: #35322d;
+  --input: #242421;
+  --ring: #d9aa32;
+  --radius: 0.5rem;
+  --ea-red: #a70d14;
+  --ea-red-deep: #59080c;
+  --ea-gold: #d9aa32;
+  --ea-gold-soft: #f5d789;
+  --ea-surface: #121313;
+  --ea-surface-raised: #181918;
+  --ea-sidebar: #0b0c0c;
+  --ea-border: #35322d;
+}
+
+@layer base {
+  * { @apply border-border; }
+  html { background: #090a0a; }
+  body {
+    min-height: 100vh;
+    background: radial-gradient(circle at 82% -10%, #3b0709 0, transparent 30rem), #090a0a;
+    color: var(--foreground);
+    font-family: Arial, Helvetica, sans-serif;
+  }
+  h1, h2, h3, .ea-heading {
+    font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+    font-weight: 500;
+    letter-spacing: .035em;
+  }
+  input, select, textarea {
+    border: 1px solid var(--input);
+    background: #0e0f0f;
+    color: var(--foreground);
+    border-radius: .375rem;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: 2px solid color-mix(in srgb, var(--ea-gold) 60%, transparent);
+    outline-offset: 1px;
+    border-color: var(--ea-gold);
+  }
+}
+
+.ea-panel {
+  background: linear-gradient(145deg, rgba(27,28,27,.96), rgba(14,15,15,.96));
+  border: 1px solid var(--ea-border);
+  box-shadow: 0 12px 30px rgba(0,0,0,.26);
+}
+.ea-stat {
+  background: linear-gradient(135deg, #a70d14, #51070a);
+  border: 1px solid #c42e2e;
+  box-shadow: inset 0 1px 0 rgba(255,226,148,.18), 0 10px 20px rgba(0,0,0,.2);
+}
+.ea-gold { color: var(--ea-gold); }

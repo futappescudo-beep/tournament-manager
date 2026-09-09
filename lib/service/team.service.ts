@@ -1,0 +1,124 @@
+import { createClient } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/auth/session";
+import type { TeamFormValues, TeamRegistration } from "@/lib/validations/teams";
+
+function registrationKey(registration: TeamRegistration) {
+  return `${registration.category_id}:${registration.zone_id}`;
+}
+
+function registrationRows(teamId: string, registrations: TeamRegistration[]) {
+  return registrations.map((registration) => ({
+    team_id: teamId,
+    category_id: registration.category_id,
+    zone_id: registration.zone_id,
+  }));
+}
+
+function teamPayload(values: TeamFormValues) {
+  return {
+    name: values.name,
+    short_name: values.short_name || null,
+    contact_name: values.contact_name || null,
+    email: values.email || null,
+    phone: values.phone || null,
+    logo_url: values.logo_url || null,
+    notes: values.notes || null,
+    active: values.active,
+  };
+}
+
+async function assertZoneCapacity(registrations: TeamRegistration[]) {
+  if (!registrations.length) return;
+  const supabase = await createClient();
+  for (const registration of registrations) {
+    const { data: zone, error: zoneError } = await supabase.from("zones").select("name,max_teams").eq("id", registration.zone_id).is("deleted_at", null).single();
+    if (zoneError) throw new Error(zoneError.message);
+    if (zone.max_teams === null) continue;
+    const { count, error: countError } = await supabase.from("team_category_registrations").select("id", { count: "exact", head: true }).eq("zone_id", registration.zone_id).is("deleted_at", null);
+    if (countError) throw new Error(countError.message);
+    if ((count ?? 0) >= zone.max_teams) throw new Error(`La ${zone.name} alcanzó su cupo de ${zone.max_teams} equipos.`);
+  }
+}
+
+export async function getTeams() {
+  await requireUser();
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("teams")
+    .select(`id, name, short_name, logo_url, contact_name, phone, email, notes, active, created_at, updated_at,
+      team_category_registrations (id, category_id, zone_id, registration_status_id, categories (id, name), zones (id, name))`)
+    .is("deleted_at", null)
+    .order("name");
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+export async function createTeam(values: TeamFormValues) {
+  await requireUser();
+  await assertZoneCapacity(values.registrations);
+  const supabase = await createClient();
+  const { data: team, error: teamError } = await supabase
+    .from("teams")
+    .insert(teamPayload(values))
+    .select("id")
+    .single();
+  if (teamError) throw new Error(teamError.message);
+
+  const { error: registrationError } = await supabase
+    .from("team_category_registrations")
+    .insert(registrationRows(team.id, values.registrations));
+  if (registrationError) {
+    await supabase.from("teams").update({ deleted_at: new Date().toISOString() }).eq("id", team.id);
+    throw new Error(registrationError.message);
+  }
+  return team;
+}
+
+export async function updateTeam(id: string, values: TeamFormValues) {
+  await requireUser();
+  const supabase = await createClient();
+  const { error: teamError } = await supabase.from("teams").update(teamPayload(values)).eq("id", id).is("deleted_at", null);
+  if (teamError) throw new Error(teamError.message);
+
+  const { data: current, error: currentError } = await supabase
+    .from("team_category_registrations")
+    .select("id, category_id, zone_id")
+    .eq("team_id", id)
+    .is("deleted_at", null);
+  if (currentError) throw new Error(currentError.message);
+
+  const desired = new Set(values.registrations.map(registrationKey));
+  const removals = (current ?? []).filter((registration) => !desired.has(`${registration.category_id}:${registration.zone_id}`));
+  if (removals.length) {
+    const { error } = await supabase.from("team_category_registrations").update({ deleted_at: new Date().toISOString() }).in("id", removals.map((registration) => registration.id));
+    if (error) throw new Error(error.message);
+  }
+  const existing = new Set((current ?? []).map((registration) => `${registration.category_id}:${registration.zone_id}`));
+  const additions = values.registrations.filter((registration) => !existing.has(registrationKey(registration)));
+  if (additions.length) {
+    await assertZoneCapacity(additions);
+    const { error } = await supabase.from("team_category_registrations").insert(registrationRows(id, additions));
+    if (error) throw new Error(error.message);
+  }
+}
+
+export async function deleteTeam(id: string) {
+  await requireUser();
+  const supabase = await createClient();
+  const { error } = await supabase.from("teams").update({ deleted_at: new Date().toISOString(), active: false }).eq("id", id).is("deleted_at", null);
+  if (error) throw new Error(error.message);
+}
+
+export async function getTeamRoster(teamId: string) {
+  await requireUser();
+  const supabase = await createClient();
+  const { data: team, error: teamError } = await supabase.from("teams").select("id,name,logo_url").eq("id", teamId).is("deleted_at", null).single();
+  if (teamError) throw new Error(teamError.message);
+  const { data: registrations, error: registrationsError } = await supabase.from("team_category_registrations").select("id,display_name,categories(name),zones(name)").eq("team_id", teamId).is("deleted_at", null);
+  if (registrationsError) throw new Error(registrationsError.message);
+  const registrationIds = (registrations ?? []).map((registration) => registration.id);
+  if (!registrationIds.length) return { team, players: [] as Array<Record<string, unknown>> };
+  const { data: players, error: playersError } = await supabase.from("player_team_registrations").select("id,shirt_number,is_captain,is_goalkeeper,team_registration_id,players(first_name,last_name,document_number,photo_url)").in("team_registration_id", registrationIds).is("deleted_at", null).is("left_at", null).order("shirt_number");
+  if (playersError) throw new Error(playersError.message);
+  return { team, players: players ?? [] };
+}

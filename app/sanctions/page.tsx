@@ -1,0 +1,8 @@
+import { ShieldAlert } from "lucide-react";
+import { AppShell } from "@/components/layout/AppShell";
+import { getSuspensions } from "@/lib/service/competition.service";
+
+export default async function SanctionsPage() {
+  const suspensions = await getSuspensions();
+  return <AppShell><div className="space-y-6"><div><p className="text-xs font-bold tracking-[.18em] text-[var(--ea-gold)]">DISCIPLINA</p><h1 className="mt-1 text-3xl text-white">Sanciones</h1><p className="mt-1 text-sm text-stone-400">Control de tarjetas y suspensiones de jugadores.</p></div><section className="ea-panel overflow-hidden rounded-lg"><div className="flex items-center gap-3 border-b border-[var(--ea-border)] p-5"><ShieldAlert className="text-[var(--ea-gold)]" /><h2 className="ea-heading text-xl">Estado disciplinario</h2></div>{suspensions.length ? <div className="overflow-x-auto"><table className="w-full min-w-[650px] text-sm"><thead className="border-b border-[var(--ea-border)] text-left text-xs uppercase tracking-wider text-stone-500"><tr><th className="p-4">Jugador</th><th>Amarillas</th><th>Rojas</th><th>Susp. automatica</th><th>Susp. manual</th></tr></thead><tbody>{suspensions.map((suspension, index) => <tr key={`${suspension.first_name}-${suspension.last_name}-${index}`} className="border-b border-[var(--ea-border)]/70"><td className="p-4 font-semibold">{suspension.first_name} {suspension.last_name}</td><td>{suspension.yellow_cards ?? 0}</td><td className="text-red-300">{suspension.red_cards ?? 0}</td><td>{suspension.automatic_suspensions ?? 0}</td><td>{suspension.manual_suspensions ?? 0}</td></tr>)}</tbody></table></div> : <div className="p-12 text-center text-sm text-stone-500">No hay sanciones activas.</div>}</section></div></AppShell>;
+}

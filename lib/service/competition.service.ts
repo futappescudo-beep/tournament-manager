@@ -1,0 +1,160 @@
+import { requireUser } from "@/lib/auth/session";
+import { createClient } from "@/lib/supabase/server";
+import type { FixtureMatchValues, ResultValues } from "@/lib/validations/matches";
+
+export type FixtureMatch = { id: string; round: number | null; match_date: string | null; kickoff_time: string | null; home_team: string | null; away_team: string | null; field: string | null; referee: string | null; home_score: number | null; away_score: number | null; };
+export type Standing = { team_registration_id: string | null; display_name: string | null; competition_phase_id: string | null; competition_group_id: string | null; played: number | null; won: number | null; drawn: number | null; lost: number | null; goals_for: number | null; goals_against: number | null; };
+export type FixtureSetup = {
+  tournaments: { id: string; name: string }[];
+  phases: { id: string; name: string }[];
+  teams: { id: string; name: string; category: string | null; zone: string | null }[];
+  fields: { id: string; name: string }[];
+  referees: { id: string; name: string }[];
+};
+
+export async function getFixtureSetup(): Promise<FixtureSetup> {
+  await requireUser();
+  const supabase = await createClient();
+  const [tournamentsResult, phasesResult, teamsResult, fieldsResult, refereesResult] = await Promise.all([
+    supabase.from("tournaments").select("id,name").is("deleted_at", null).order("name"),
+    supabase.from("competition_phases").select("id,name").is("deleted_at", null).order("display_order"),
+    supabase.from("team_category_registrations").select("id,display_name,categories(name),zones(name),teams(name)").is("deleted_at", null).order("display_name"),
+    supabase.from("fields").select("id,name").is("deleted_at", null).eq("active", true).order("name"),
+    supabase.from("referees").select("id,first_name,last_name").is("deleted_at", null).eq("active", true).order("last_name"),
+  ]);
+  for (const result of [tournamentsResult, phasesResult, teamsResult, fieldsResult, refereesResult]) {
+    if (result.error) throw new Error(result.error.message);
+  }
+  return {
+    tournaments: tournamentsResult.data ?? [],
+    phases: phasesResult.data ?? [],
+    teams: (teamsResult.data ?? []).map((registration) => {
+      const category = registration.categories as unknown as { name: string } | { name: string }[] | null;
+      const zone = registration.zones as unknown as { name: string } | { name: string }[] | null;
+      const team = registration.teams as unknown as { name: string } | { name: string }[] | null;
+      const single = (value: typeof category) => Array.isArray(value) ? value[0] : value;
+      return { id: registration.id, name: registration.display_name ?? single(team)?.name ?? "Equipo", category: single(category)?.name ?? null, zone: single(zone)?.name ?? null };
+    }),
+    fields: fieldsResult.data ?? [],
+    referees: (refereesResult.data ?? []).map((referee) => ({ id: referee.id, name: `${referee.first_name} ${referee.last_name}`.trim() })),
+  };
+}
+
+export async function getFixture(): Promise<FixtureMatch[]> {
+  await requireUser();
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("vw_fixture").select("id,round,match_date,kickoff_time,home_team,away_team,field,referee,home_score,away_score").order("match_date").order("kickoff_time");
+  if (error) throw new Error(error.message);
+  return (data ?? []) as FixtureMatch[];
+}
+
+export async function getPublicFixture(): Promise<FixtureMatch[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("vw_fixture").select("id,round,match_date,kickoff_time,home_team,away_team,field,referee,home_score,away_score").order("match_date").order("kickoff_time");
+  if (error) throw new Error(error.message);
+  return (data ?? []) as FixtureMatch[];
+}
+
+export async function updateMatchResult({ matchId, homeScore, awayScore }: ResultValues) {
+  await requireUser();
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("matches")
+    .update({ home_score: homeScore, away_score: awayScore })
+    .eq("id", matchId);
+  if (error) throw new Error(error.message);
+}
+
+export async function createFixtureMatch(values: FixtureMatchValues) {
+  await requireUser();
+  const supabase = await createClient();
+  const { data: registrations, error: registrationsError } = await supabase
+    .from("team_category_registrations")
+    .select("id,category_id")
+    .in("id", [values.homeTeamRegistrationId, values.awayTeamRegistrationId])
+    .is("deleted_at", null);
+  if (registrationsError) throw new Error(registrationsError.message);
+  if ((registrations ?? []).length !== 2) throw new Error("Uno de los equipos ya no está inscripto.");
+  if (registrations?.[0]?.category_id !== registrations?.[1]?.category_id) throw new Error("Los equipos deben pertenecer a la misma categoría.");
+
+  const { data: status, error: statusError } = await supabase
+    .from("match_statuses")
+    .select("id")
+    .eq("code", "SCHEDULED")
+    .maybeSingle();
+  if (statusError) throw new Error(statusError.message);
+  if (!status) throw new Error("No se encontró el estado SCHEDULED. Revisá el catálogo de estados de partido en Supabase.");
+
+  const { data: existingMatchday, error: matchdayLookupError } = await supabase
+    .from("matchdays")
+    .select("id")
+    .eq("tournament_id", values.tournamentId)
+    .eq("competition_phase_id", values.phaseId)
+    .eq("round", values.round)
+    .is("deleted_at", null)
+    .order("created_at")
+    .limit(1)
+    .maybeSingle();
+  if (matchdayLookupError) throw new Error(matchdayLookupError.message);
+
+  let matchdayId = existingMatchday?.id;
+  if (!matchdayId) {
+    const { data: matchday, error: createMatchdayError } = await supabase
+      .from("matchdays")
+      .insert({ tournament_id: values.tournamentId, competition_phase_id: values.phaseId, round: values.round, name: `Fecha ${values.round}`, starts_at: values.matchDate, is_closed: false })
+      .select("id")
+      .single();
+    if (createMatchdayError) throw new Error(createMatchdayError.message);
+    matchdayId = matchday.id;
+  }
+
+  const { error } = await supabase.from("matches").insert({
+    matchday_id: matchdayId,
+    competition_phase_id: values.phaseId,
+    home_team_registration_id: values.homeTeamRegistrationId,
+    away_team_registration_id: values.awayTeamRegistrationId,
+    match_status_id: status.id,
+    match_date: values.matchDate,
+    kickoff_time: values.kickoffTime,
+    field_id: values.fieldId,
+    referee_id: values.refereeId,
+    observations: values.observations || null,
+  });
+  if (error) throw new Error(error.message);
+}
+
+export async function getSuspensions(): Promise<{ first_name: string | null; last_name: string | null; yellow_cards: number | null; red_cards: number | null; automatic_suspensions: number | null; manual_suspensions: number | null; }[]> {
+  await requireUser();
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("vw_player_suspensions").select("first_name,last_name,yellow_cards,red_cards,automatic_suspensions,manual_suspensions");
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+export async function getStandings(): Promise<Standing[]> {
+  await requireUser();
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("vw_standings").select("team_registration_id,display_name,competition_phase_id,competition_group_id,played,won,drawn,lost,goals_for,goals_against");
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as Standing[]).sort((a, b) => points(b) - points(a) || goalDifference(b) - goalDifference(a) || (b.goals_for ?? 0) - (a.goals_for ?? 0));
+}
+
+export async function getPublicStandings(): Promise<Standing[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("vw_standings").select("team_registration_id,display_name,competition_phase_id,competition_group_id,played,won,drawn,lost,goals_for,goals_against");
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as Standing[]).sort((a, b) => points(b) - points(a) || goalDifference(b) - goalDifference(a) || (b.goals_for ?? 0) - (a.goals_for ?? 0));
+}
+
+export const points = (standing: Standing) => (standing.won ?? 0) * 3 + (standing.drawn ?? 0);
+export const goalDifference = (standing: Standing) => (standing.goals_for ?? 0) - (standing.goals_against ?? 0);
+
+export type Payment = { id: string; amount: number; payment_date: string | null; due_date: string | null; receipt_number: string | null; observations: string | null; team_category_registrations: { display_name: string | null }[]; payment_types: { name: string }[]; payment_statuses: { name: string; code: string }[]; };
+
+export async function getPayments(): Promise<Payment[]> {
+  await requireUser();
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("payments").select("id,amount,payment_date,due_date,receipt_number,observations,team_category_registrations(display_name),payment_types(name),payment_statuses(name,code)").is("deleted_at", null).order("due_date");
+  if (error) throw new Error(error.message);
+  return (data ?? []) as unknown as Payment[];
+}

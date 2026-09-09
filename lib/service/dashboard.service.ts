@@ -1,0 +1,29 @@
+import { requireUser } from "@/lib/auth/session";
+import { createClient } from "@/lib/supabase/server";
+import { getFixture, getStandings, points, type FixtureMatch, type Standing } from "@/lib/service/competition.service";
+
+export type DashboardFilter = { tournamentId?: string; categoryId?: string; zoneId?: string };
+export type DashboardCatalog = { tournaments: { id: string; name: string }[]; categories: { id: string; tournament_id: string; name: string }[]; zones: { id: string; category_id: string; name: string }[] };
+
+export async function getDashboardCatalog(): Promise<DashboardCatalog> {
+  await requireUser(); const supabase = await createClient();
+  const [tournaments, categories, zones] = await Promise.all([supabase.from("tournaments").select("id,name").is("deleted_at", null).order("name"), supabase.from("categories").select("id,tournament_id,name").is("deleted_at", null).eq("active", true).order("display_order"), supabase.from("zones").select("id,category_id,name").is("deleted_at", null).order("display_order")]);
+  if (tournaments.error) throw new Error(tournaments.error.message); if (categories.error) throw new Error(categories.error.message); if (zones.error) throw new Error(zones.error.message);
+  return { tournaments: tournaments.data ?? [], categories: categories.data ?? [], zones: zones.data ?? [] };
+}
+
+export async function getDashboardData(filter: DashboardFilter): Promise<{ teamCount: number; playerCount: number; goalCount: number; matches: FixtureMatch[]; standings: Standing[] }> {
+  await requireUser(); const supabase = await createClient(); const catalog = await getDashboardCatalog();
+  const categoryIds = filter.categoryId ? [filter.categoryId] : catalog.categories.filter((item) => !filter.tournamentId || item.tournament_id === filter.tournamentId).map((item) => item.id);
+  let registrationsQuery = supabase.from("team_category_registrations").select("id,team_id").is("deleted_at", null);
+  if (categoryIds.length) registrationsQuery = registrationsQuery.in("category_id", categoryIds);
+  if (filter.zoneId) registrationsQuery = registrationsQuery.eq("zone_id", filter.zoneId);
+  const { data: registrations, error } = await registrationsQuery;
+  if (error) throw new Error(error.message);
+  const registrationIds = (registrations ?? []).map((item) => item.id); const teamCount = new Set((registrations ?? []).map((item) => item.team_id)).size;
+  if (!registrationIds.length) return { teamCount: 0, playerCount: 0, goalCount: 0, matches: [], standings: [] };
+  const [playersResult, matchesResult, fixture, standings] = await Promise.all([supabase.from("player_team_registrations").select("player_id").is("deleted_at", null).is("left_at", null).in("team_registration_id", registrationIds), supabase.from("matches").select("id,home_score,away_score").is("deleted_at", null).in("home_team_registration_id", registrationIds), getFixture(), getStandings()]);
+  if (playersResult.error) throw new Error(playersResult.error.message); if (matchesResult.error) throw new Error(matchesResult.error.message);
+  const matchIds = new Set((matchesResult.data ?? []).map((item) => item.id));
+  return { teamCount, playerCount: new Set((playersResult.data ?? []).map((item) => item.player_id)).size, goalCount: (matchesResult.data ?? []).reduce((sum, item) => sum + (item.home_score ?? 0) + (item.away_score ?? 0), 0), matches: fixture.filter((item) => matchIds.has(item.id)).slice(0, 5), standings: standings.filter((item) => item.team_registration_id && registrationIds.includes(item.team_registration_id)).sort((a, b) => points(b) - points(a)).slice(0, 5) };
+}
