@@ -15,7 +15,7 @@ export async function getDashboardCatalog(): Promise<DashboardCatalog> {
 export async function getDashboardData(filter: DashboardFilter): Promise<{ teamCount: number; playerCount: number; goalCount: number; matches: FixtureMatch[]; standings: Standing[] }> {
   await requireUser(); const supabase = await createClient(); const catalog = await getDashboardCatalog();
   const categoryIds = filter.categoryId ? [filter.categoryId] : catalog.categories.filter((item) => !filter.tournamentId || item.tournament_id === filter.tournamentId).map((item) => item.id);
-  let registrationsQuery = supabase.from("team_category_registrations").select("id,team_id").is("deleted_at", null);
+  let registrationsQuery = supabase.from("team_category_registrations").select("id,team_id,teams!inner(id,active,deleted_at)").is("deleted_at", null).is("teams.deleted_at", null).eq("teams.active", true);
   if (categoryIds.length) registrationsQuery = registrationsQuery.in("category_id", categoryIds);
   if (filter.zoneId) registrationsQuery = registrationsQuery.eq("zone_id", filter.zoneId);
   const { data: registrations, error } = await registrationsQuery;

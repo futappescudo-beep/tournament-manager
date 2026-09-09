@@ -1,7 +1,7 @@
 import { requireUser } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import type { PlayerFormValues } from "@/lib/validations/players";
-import type { Player, TeamRegistrationOption } from "@/lib/types/player";
+import type { Player, PlayerAssignment, TeamRegistrationOption } from "@/lib/types/player";
 import type { PlayerAssignmentValues } from "@/lib/validations/players";
 
 function playerPayload(values: PlayerFormValues) {
@@ -18,13 +18,15 @@ export async function getPlayers() {
   if (playersResult.error) throw new Error(playersResult.error.message);
   if (assignmentsResult.error) throw new Error(assignmentsResult.error.message);
 
-  const assignments = new Map<string, Player["current_assignment"]>();
+  const assignments = new Map<string, PlayerAssignment[]>();
   for (const row of (assignmentsResult.data ?? []) as unknown as Array<Record<string, unknown>>) {
     const registration = row.team_category_registrations as { display_name?: string | null; teams?: { name?: string | null } | null; categories?: { name?: string | null } | null; zones?: { name?: string | null } | null } | null;
     const label = registration?.display_name || [registration?.teams?.name, registration?.categories?.name, registration?.zones?.name].filter(Boolean).join(" · ") || "Equipo asignado";
-    assignments.set(row.player_id as string, { id: row.id as string, team_registration_id: row.team_registration_id as string, shirt_number: row.shirt_number as number, is_captain: Boolean(row.is_captain), is_goalkeeper: Boolean(row.is_goalkeeper), label });
+    const playerAssignments = assignments.get(row.player_id as string) ?? [];
+    playerAssignments.push({ id: row.id as string, team_registration_id: row.team_registration_id as string, shirt_number: row.shirt_number as number, is_captain: Boolean(row.is_captain), is_goalkeeper: Boolean(row.is_goalkeeper), label });
+    assignments.set(row.player_id as string, playerAssignments);
   }
-  return (playersResult.data ?? []).map((player) => ({ ...player, current_assignment: assignments.get(player.id) ?? null })) as Player[];
+  return (playersResult.data ?? []).map((player) => ({ ...player, assignments: assignments.get(player.id) ?? [] })) as Player[];
 }
 
 export async function getTeamRegistrationOptions(): Promise<TeamRegistrationOption[]> {
@@ -66,9 +68,23 @@ export async function deletePlayer(id: string) {
 export async function assignPlayerToTeam(values: PlayerAssignmentValues) {
   await requireUser();
   const supabase = await createClient();
-  const now = new Date().toISOString();
-  const { error: closeError } = await supabase.from("player_team_registrations").update({ left_at: now.slice(0, 10), deleted_at: now }).eq("player_id", values.player_id).is("deleted_at", null).is("left_at", null);
-  if (closeError) throw new Error(closeError.message);
-  const { error } = await supabase.from("player_team_registrations").insert({ ...values, joined_at: now.slice(0, 10) });
+  const { data: targetRegistration, error: targetError } = await supabase.from("team_category_registrations").select("id,team_id").eq("id", values.team_registration_id).is("deleted_at", null).single();
+  if (targetError) throw new Error(targetError.message);
+  const { data: activeAssignments, error: activeError } = await supabase.from("player_team_registrations").select("id,team_registration_id,team_category_registrations(team_id)").eq("player_id", values.player_id).is("deleted_at", null).is("left_at", null);
+  if (activeError) throw new Error(activeError.message);
+  const existing = (activeAssignments ?? []).find((assignment) => assignment.team_registration_id === values.team_registration_id);
+  const belongsToOtherTeam = (activeAssignments ?? []).some((assignment) => {
+    const registration = assignment.team_category_registrations as unknown as { team_id: string } | { team_id: string }[] | null;
+    const teamId = Array.isArray(registration) ? registration[0]?.team_id : registration?.team_id;
+    return teamId && teamId !== targetRegistration.team_id;
+  });
+  if (belongsToOtherTeam) throw new Error("Un jugador no puede estar activo en equipos distintos dentro del mismo torneo.");
+  const payload = { shirt_number: values.shirt_number, is_captain: values.is_captain, is_goalkeeper: values.is_goalkeeper };
+  if (existing) {
+    const { error } = await supabase.from("player_team_registrations").update(payload).eq("id", existing.id);
+    if (error) throw new Error(error.message);
+    return;
+  }
+  const { error } = await supabase.from("player_team_registrations").insert({ ...values, ...payload, joined_at: new Date().toISOString().slice(0, 10) });
   if (error) throw new Error(error.message);
 }

@@ -11,6 +11,15 @@ export const playerSchema = z.object({
 
 export type PlayerFormValues = z.infer<typeof playerSchema>;
 
+export const playerCreateSchema = playerSchema.extend({
+  team_registration_id: z.union([z.uuid(), z.literal("")]).optional(),
+  shirt_number: z.number().int().min(1).max(99),
+  is_captain: z.boolean(),
+  is_goalkeeper: z.boolean(),
+});
+
+export type PlayerCreateValues = z.infer<typeof playerCreateSchema>;
+
 export const playerAssignmentSchema = z.object({
   player_id: z.uuid(),
   team_registration_id: z.uuid({ error: "Selecciona el equipo y la categoria." }),

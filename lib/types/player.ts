@@ -6,7 +6,7 @@ export type Player = {
   last_name: string;
   birth_date: string | null;
   photo_url: string | null;
-  current_assignment: PlayerAssignment | null;
+  assignments: PlayerAssignment[];
 };
 
 export type PlayerAssignment = {

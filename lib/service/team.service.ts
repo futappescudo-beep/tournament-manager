@@ -117,8 +117,8 @@ export async function getTeamRoster(teamId: string) {
   const { data: registrations, error: registrationsError } = await supabase.from("team_category_registrations").select("id,display_name,categories(name),zones(name)").eq("team_id", teamId).is("deleted_at", null);
   if (registrationsError) throw new Error(registrationsError.message);
   const registrationIds = (registrations ?? []).map((registration) => registration.id);
-  if (!registrationIds.length) return { team, players: [] as Array<Record<string, unknown>> };
+  if (!registrationIds.length) return { team, registrations: [] as Array<{ id: string; label: string }>, players: [] as Array<Record<string, unknown>> };
   const { data: players, error: playersError } = await supabase.from("player_team_registrations").select("id,shirt_number,is_captain,is_goalkeeper,team_registration_id,players(first_name,last_name,document_number,photo_url)").in("team_registration_id", registrationIds).is("deleted_at", null).is("left_at", null).order("shirt_number");
   if (playersError) throw new Error(playersError.message);
-  return { team, players: players ?? [] };
+  return { team, registrations: (registrations ?? []).map((registration) => ({ id: registration.id, label: registration.display_name ?? "Equipo" })), players: players ?? [] };
 }
