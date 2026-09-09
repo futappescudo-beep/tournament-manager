@@ -1,6 +1,7 @@
 import { requireUser } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import type { FixtureMatchValues, ResultValues } from "@/lib/validations/matches";
+import type { MatchEventValues } from "@/lib/validations/match-events";
 
 export type FixtureMatch = { id: string; round: number | null; match_date: string | null; kickoff_time: string | null; home_team: string | null; away_team: string | null; field: string | null; referee: string | null; home_score: number | null; away_score: number | null; };
 export type Standing = { team_registration_id: string | null; display_name: string | null; competition_phase_id: string | null; competition_group_id: string | null; played: number | null; won: number | null; drawn: number | null; lost: number | null; goals_for: number | null; goals_against: number | null; };
@@ -10,6 +11,16 @@ export type FixtureSetup = {
   teams: { id: string; name: string; category: string | null; zone: string | null }[];
   fields: { id: string; name: string }[];
   referees: { id: string; name: string }[];
+};
+export type MatchReport = {
+  id: string;
+  homeTeamRegistrationId: string;
+  awayTeamRegistrationId: string;
+  homeTeam: string;
+  awayTeam: string;
+  players: { id: string; teamRegistrationId: string; name: string; shirtNumber: number }[];
+  eventTypes: { id: string; code: string; name: string }[];
+  events: { id: string; playerName: string; eventName: string; minute: number; comments: string | null }[];
 };
 
 export async function getFixtureSetup(): Promise<FixtureSetup> {
@@ -121,6 +132,50 @@ export async function createFixtureMatch(values: FixtureMatchValues) {
     observations: values.observations || null,
   });
   if (error) throw new Error(error.message);
+}
+
+export async function getMatchReport(matchId: string): Promise<MatchReport> {
+  await requireUser();
+  const supabase = await createClient();
+  const { data: match, error: matchError } = await supabase.from("matches")
+    .select("id,home_team_registration_id,away_team_registration_id,team_category_registrations!matches_home_team_registration_id_fkey(display_name),away:team_category_registrations!matches_away_team_registration_id_fkey(display_name)")
+    .eq("id", matchId).is("deleted_at", null).single();
+  if (matchError) throw new Error(matchError.message);
+  const matchData = match as unknown as { id: string; home_team_registration_id: string; away_team_registration_id: string; team_category_registrations: { display_name: string | null } | null; away: { display_name: string | null } | null };
+  const registrationIds = [matchData.home_team_registration_id, matchData.away_team_registration_id];
+  const [playersResult, eventTypesResult, eventsResult] = await Promise.all([
+    supabase.from("player_team_registrations").select("id,team_registration_id,shirt_number,players(first_name,last_name)").in("team_registration_id", registrationIds).is("deleted_at", null).is("left_at", null).order("shirt_number"),
+    supabase.from("event_types").select("id,code,name").order("display_order"),
+    supabase.from("match_events").select("id,player_registration_id,event_type_id,minute,comments").eq("match_id", matchId).order("minute"),
+  ]);
+  for (const result of [playersResult, eventTypesResult, eventsResult]) if (result.error) throw new Error(result.error.message);
+  const players = (playersResult.data ?? []).map((row) => {
+    const player = row.players as unknown as { first_name: string; last_name: string } | { first_name: string; last_name: string }[] | null;
+    const item = Array.isArray(player) ? player[0] : player;
+    return { id: row.id, teamRegistrationId: row.team_registration_id, name: `${item?.first_name ?? "Jugador"} ${item?.last_name ?? ""}`.trim(), shirtNumber: row.shirt_number };
+  });
+  const eventTypes = eventTypesResult.data ?? [];
+  return { id: matchData.id, homeTeamRegistrationId: matchData.home_team_registration_id, awayTeamRegistrationId: matchData.away_team_registration_id, homeTeam: matchData.team_category_registrations?.display_name ?? "Local", awayTeam: matchData.away?.display_name ?? "Visitante", players, eventTypes, events: (eventsResult.data ?? []).map((event) => ({ id: event.id, playerName: players.find((player) => player.id === event.player_registration_id)?.name ?? "Jugador", eventName: eventTypes.find((type) => type.id === event.event_type_id)?.name ?? "Evento", minute: event.minute ?? 0, comments: event.comments })) };
+}
+
+export async function createMatchEvent(values: MatchEventValues) {
+  await requireUser();
+  const supabase = await createClient();
+  const { data: match, error: matchError } = await supabase.from("matches").select("home_team_registration_id,away_team_registration_id").eq("id", values.matchId).is("deleted_at", null).single();
+  if (matchError) throw new Error(matchError.message);
+  const { data: player, error: playerError } = await supabase.from("player_team_registrations").select("team_registration_id").eq("id", values.playerRegistrationId).is("deleted_at", null).is("left_at", null).single();
+  if (playerError) throw new Error(playerError.message);
+  if (![match.home_team_registration_id, match.away_team_registration_id].includes(player.team_registration_id)) throw new Error("El jugador no forma parte de este partido.");
+  const { error } = await supabase.from("match_events").insert({ match_id: values.matchId, player_registration_id: values.playerRegistrationId, team_registration_id: player.team_registration_id, event_type_id: values.eventTypeId, minute: values.minute, comments: values.comments || null });
+  if (error) throw new Error(error.message);
+}
+
+export async function getTopScorers(): Promise<{ id: string; first_name: string | null; last_name: string | null; goals: number | null }[]> {
+  await requireUser();
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("vw_top_scorers").select("id,first_name,last_name,goals").order("goals", { ascending: false });
+  if (error) throw new Error(error.message);
+  return data ?? [];
 }
 
 export async function getSuspensions(): Promise<{ first_name: string | null; last_name: string | null; yellow_cards: number | null; red_cards: number | null; automatic_suspensions: number | null; manual_suspensions: number | null; }[]> {

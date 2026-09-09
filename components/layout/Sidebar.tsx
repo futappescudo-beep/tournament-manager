@@ -4,6 +4,7 @@ import {
   CalendarDays,
   ClipboardCheck,
   FileText,
+  Goal,
   LayoutDashboard,
   Shield,
   ShieldAlert,
@@ -46,6 +47,11 @@ const menu = [
     href: "/standings",
     icon: Trophy,
     label: "Posiciones",
+  },
+  {
+    href: "/scorers",
+    icon: Goal,
+    label: "Goleadores",
   },
   {
     href: "/sanctions",
