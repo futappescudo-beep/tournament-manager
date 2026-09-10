@@ -1,6 +1,6 @@
 import { requireUser } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
-import type { FixtureMatchValues, ResultValues } from "@/lib/validations/matches";
+import type { FixtureMatchValues, RegularFixtureGeneratorValues, ResultValues } from "@/lib/validations/matches";
 import type { MatchEventValues } from "@/lib/validations/match-events";
 import type { MatchSheetConfirmationValues, MatchSheetEntryValues, MatchSheetStatusValues } from "@/lib/validations/match-events";
 
@@ -10,7 +10,7 @@ export type FixtureSetup = {
   tournaments: { id: string; name: string }[];
   categories: { id: string; tournamentId: string; name: string }[];
   zones: { id: string; categoryId: string; name: string }[];
-  phases: { id: string; name: string }[];
+  phases: { id: string; name: string; isElimination: boolean }[];
   teams: { id: string; name: string; categoryId: string; zoneId: string; category: string | null; zone: string | null }[];
   fields: { id: string; name: string }[];
   referees: { id: string; name: string }[];
@@ -36,7 +36,7 @@ export async function getFixtureSetup(): Promise<FixtureSetup> {
     supabase.from("tournaments").select("id,name").is("deleted_at", null).order("name"),
     supabase.from("categories").select("id,tournament_id,name").is("deleted_at", null).eq("active", true).order("display_order"),
     supabase.from("zones").select("id,category_id,name").is("deleted_at", null).order("display_order"),
-    supabase.from("competition_phases").select("id,name").is("deleted_at", null).order("display_order"),
+    supabase.from("competition_phases").select("id,name,is_elimination").is("deleted_at", null).order("display_order"),
     supabase.from("team_category_registrations").select("id,category_id,zone_id,display_name,categories(name),zones(name),teams(name)").is("deleted_at", null).order("display_name"),
     supabase.from("fields").select("id,name").is("deleted_at", null).eq("active", true).order("name"),
     supabase.from("referees").select("id,first_name,last_name").is("deleted_at", null).eq("active", true).order("last_name"),
@@ -48,7 +48,7 @@ export async function getFixtureSetup(): Promise<FixtureSetup> {
     tournaments: tournamentsResult.data ?? [],
     categories: (categoriesResult.data ?? []).map((category) => ({ id: category.id, tournamentId: category.tournament_id, name: category.name })),
     zones: (zonesResult.data ?? []).map((zone) => ({ id: zone.id, categoryId: zone.category_id, name: zone.name })),
-    phases: phasesResult.data ?? [],
+    phases: (phasesResult.data ?? []).map((phase) => ({ id: phase.id, name: phase.name, isElimination: phase.is_elimination })),
     teams: (teamsResult.data ?? []).map((registration) => {
       const category = registration.categories as unknown as { name: string } | { name: string }[] | null;
       const zone = registration.zones as unknown as { name: string } | { name: string }[] | null;
@@ -156,6 +156,58 @@ export async function createFixtureMatch(values: FixtureMatchValues) {
     observations: values.observations || null,
   });
   if (error) throw new Error(error.message);
+}
+
+function dateAfter(date: string, days: number) {
+  const [year, month, day] = date.split("-").map(Number);
+  const value = new Date(Date.UTC(year, month - 1, day + days));
+  return value.toISOString().slice(0, 10);
+}
+
+function roundRobin(registrationIds: string[]) {
+  const rotation = [...registrationIds];
+  if (rotation.length % 2) rotation.push("BYE");
+  const rounds: [string, string][][] = [];
+  for (let round = 0; round < rotation.length - 1; round += 1) {
+    const pairs: [string, string][] = [];
+    for (let index = 0; index < rotation.length / 2; index += 1) {
+      const home = rotation[index]; const away = rotation[rotation.length - 1 - index];
+      if (home !== "BYE" && away !== "BYE") pairs.push(round % 2 === 0 ? [home, away] : [away, home]);
+    }
+    rounds.push(pairs);
+    rotation.splice(1, 0, rotation.pop()!);
+  }
+  return rounds;
+}
+
+export async function generateRegularFixture(values: RegularFixtureGeneratorValues) {
+  await requireUser();
+  const supabase = await createClient();
+  const [{ data: registrations, error: registrationsError }, { data: status, error: statusError }, { data: phase, error: phaseError }, { data: existingMatchdays, error: matchdaysError }] = await Promise.all([
+    supabase.from("team_category_registrations").select("id").eq("category_id", values.categoryId).eq("zone_id", values.zoneId).is("deleted_at", null).order("created_at"),
+    supabase.from("match_statuses").select("id").eq("code", "SCHEDULED").maybeSingle(),
+    supabase.from("competition_phases").select("id,is_elimination").eq("id", values.phaseId).is("deleted_at", null).maybeSingle(),
+    supabase.from("matchdays").select("id").eq("tournament_id", values.tournamentId).eq("category_id", values.categoryId).eq("zone_id", values.zoneId).eq("competition_phase_id", values.phaseId).is("deleted_at", null),
+  ]);
+  if (registrationsError || statusError || phaseError || matchdaysError) throw new Error(registrationsError?.message ?? statusError?.message ?? phaseError?.message ?? matchdaysError?.message ?? "No se pudo preparar el fixture.");
+  if (!phase || phase.is_elimination) throw new Error("Seleccioná una fase regular para generar todos contra todos.");
+  if ((registrations ?? []).length < 2) throw new Error("La zona necesita al menos dos equipos activos para generar el fixture.");
+  if (!status) throw new Error("No se encontró el estado SCHEDULED para programar los partidos.");
+  const existingMatchdayIds = (existingMatchdays ?? []).map((matchday) => matchday.id);
+  if (existingMatchdayIds.length) {
+    const { data: existingMatches, error: existingMatchesError } = await supabase.from("matches").select("id").in("matchday_id", existingMatchdayIds).is("deleted_at", null).limit(1);
+    if (existingMatchesError) throw new Error(existingMatchesError.message);
+    if (existingMatches?.length) throw new Error("Ya hay partidos generados para esta zona y fase. No se creó ningún duplicado.");
+  }
+  const rounds = roundRobin((registrations ?? []).map((registration) => registration.id));
+  const matchdaysPayload = rounds.map((_, index) => ({ tournament_id: values.tournamentId, category_id: values.categoryId, zone_id: values.zoneId, competition_phase_id: values.phaseId, round: index + 1, name: `Fecha ${index + 1}`, starts_at: dateAfter(values.startDate, index * values.daysBetweenRounds), is_closed: false }));
+  const { data: createdMatchdays, error: createMatchdaysError } = await supabase.from("matchdays").insert(matchdaysPayload).select("id,round");
+  if (createMatchdaysError) throw new Error(createMatchdaysError.message);
+  const matchdayByRound = new Map((createdMatchdays ?? []).map((matchday) => [matchday.round, matchday.id]));
+  const matchesPayload = rounds.flatMap((pairs, index) => pairs.map(([home, away]) => ({ matchday_id: matchdayByRound.get(index + 1), competition_phase_id: values.phaseId, home_team_registration_id: home, away_team_registration_id: away, match_status_id: status.id, match_date: dateAfter(values.startDate, index * values.daysBetweenRounds), kickoff_time: values.kickoffTime })));
+  const { error: createMatchesError } = await supabase.from("matches").insert(matchesPayload);
+  if (createMatchesError) throw new Error(createMatchesError.message);
+  return { rounds: rounds.length, matches: matchesPayload.length };
 }
 
 export async function getMatchReport(matchId: string): Promise<MatchReport> {

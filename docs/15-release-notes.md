@@ -1,5 +1,11 @@
 # Historial de versiones
 
+## 0.2.36 — Fixture automático de fase regular
+
+- Fixture permite generar una rueda única de todos contra todos para una zona seleccionada.
+- El organizador define fecha inicial, intervalo entre fechas y hora base; las canchas y la terna arbitral quedan disponibles para asignación posterior.
+- El algoritmo contempla zonas impares con un equipo libre por fecha y bloquea la operación si ya existen partidos en la misma combinación de torneo, categoría, zona y fase.
+
 ## 0.2.35 — Cuadros de playoff flexibles
 
 - Fixture incorpora un diseñador de cuadros para Copa de Oro, Copa de Plata u otra copa definida por la organización.

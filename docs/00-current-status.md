@@ -1,6 +1,6 @@
 # Estado actual — 2026-09-10
 
-Versión de documentación: **0.2.35**. La aplicación está en una etapa funcional de operación asistida: el núcleo del torneo está implementado, mientras que automatizaciones y algunos módulos administrativos siguen pendientes.
+Versión de documentación: **0.2.36**. La aplicación está en una etapa funcional de operación asistida: el núcleo del torneo está implementado, mientras que automatizaciones y algunos módulos administrativos siguen pendientes.
 
 | Área | Estado | Alcance actual |
 | --- | --- | --- |
@@ -13,7 +13,8 @@ Versión de documentación: **0.2.35**. La aplicación está en una etapa funcio
 | Pagos | Parcial | Solo consulta de pagos existentes; no hay ABM. |
 | Planilla digital | Implementado, requiere migraciones | Preliminar → Abierta → Cerrada, planteles precargados, presentismo, eventos y confirmaciones; el cierre bloquea resultados hasta reapertura administrativa. |
 | Playoffs flexibles | Implementado, requiere migración | El administrador puede crear cuadros de Oro, Plata o personalizados, con cruces manuales, pases directos por procedencia y final neutral. La programación de partidos desde el cuadro queda pendiente. |
-| Fixture automático | Pendiente | No hay generación round-robin ni validación de cruces. |
+| Fixture automático regular | Implementado | Genera una única rueda todos contra todos dentro de una zona, con fecha inicial, intervalo entre fechas y horario base; no duplica un fixture existente del mismo alcance. |
+| Fixture automático interzonal / playoffs | Pendiente | Los interzonales y la programación de partidos desde un cruce de playoff se incorporarán en etapas posteriores. |
 | PWA, notificaciones, multi-organización | Pendiente | Fuera del alcance operativo actual. |
 
 ## Dependencias operativas

@@ -9,7 +9,7 @@
 ## Próxima prioridad funcional
 
 1. Adjuntar y consultar planillas de partido.
-2. Generar fixture automático por zona, con prevención de cruces inválidos.
+2. Generar fixture interzonal opcional y programar partidos desde cruces de playoff confirmados.
 3. Endurecer RLS por equipo y partido asignado.
 4. Añadir desempates reglamentarios y filtros a vistas completas de posiciones/goleadores.
 

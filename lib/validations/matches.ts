@@ -31,3 +31,15 @@ export const fixtureMatchSchema = z.object({
 });
 
 export type FixtureMatchValues = z.infer<typeof fixtureMatchSchema>;
+
+export const regularFixtureGeneratorSchema = z.object({
+  tournamentId: z.uuid({ error: "Seleccioná un torneo válido." }),
+  categoryId: z.uuid({ error: "Seleccioná una categoría válida." }),
+  zoneId: z.uuid({ error: "Seleccioná una zona válida." }),
+  phaseId: z.uuid({ error: "Seleccioná una fase válida." }),
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Ingresá una fecha inicial válida."),
+  daysBetweenRounds: z.coerce.number().int().min(1, "El intervalo debe ser de al menos un día.").max(31),
+  kickoffTime: z.string().regex(/^\d{2}:\d{2}$/, "Ingresá una hora válida."),
+});
+
+export type RegularFixtureGeneratorValues = z.infer<typeof regularFixtureGeneratorSchema>;
