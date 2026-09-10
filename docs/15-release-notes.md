@@ -1,5 +1,10 @@
 # Historial de versiones
 
+## 0.2.27 — Calendario del dashboard por fecha
+
+- El dashboard separa los partidos en pestañas de Próximos, Hoy y Anteriores según la fecha actual de Argentina.
+- Cada pestaña muestra el marcador apenas esté cargado; los encuentros pendientes conservan la indicación `VS`.
+
 ## 0.2.26 — Tipos explícitos de tabla de posiciones
 
 - La migración de posiciones declara explícitamente como `bigint` todas las métricas acumuladas, compatible con la vista existente de Supabase.
