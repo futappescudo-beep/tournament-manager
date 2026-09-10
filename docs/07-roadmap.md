@@ -1,33 +1,18 @@
-# Roadmap de 24 horas
+# Roadmap vigente
 
-## Hora 1-2
+## Estabilización inmediata
 
-* Configurar GitHub
-* Configurar Supabase
-* Configurar Vercel
-* Variables de entorno
+1. Verificar en Supabase las migraciones hasta `20260915_backfill_played_match_status.sql`.
+2. Reautenticar Vercel, vincular el proyecto correcto y publicar el commit vigente.
+3. Prueba manual completa: catálogo → equipo → jugador → fixture → resultado → dashboard/público.
 
-## Hora 3-5
+## Próxima prioridad funcional
 
-* Autenticación
-* Layout y navegación
+1. Adjuntar y consultar planillas de partido.
+2. Generar fixture automático por zona, con prevención de cruces inválidos.
+3. Endurecer RLS por equipo y partido asignado.
+4. Añadir desempates reglamentarios y filtros a vistas completas de posiciones/goleadores.
 
-## Hora 6-9
+## Posterior
 
-* Módulo Equipos
-* Módulo Jugadores
-
-## Hora 10-13
-
-* Módulo Partidos
-* Carga de resultados
-
-## Hora 14-16
-
-* Tabla de posiciones
-* Goleadores
-
-## Hora 17-18
-
-* Subida de planillas
-* Pruebas y deploy
+ABM de pagos, notificaciones, PWA, organizaciones y temporadas con aislamiento real.

@@ -6,7 +6,7 @@ La organización del torneo se realiza con planillas en papel, grupos de WhatsAp
 
 ## Solución
 
-Una aplicación web responsive y PWA que permita administrar integralmente el torneo desde el celular y la PC.
+Una aplicación web responsive para operar un torneo desde celular o PC y publicar fixture/posiciones. PWA es una mejora pendiente, no una capacidad actual.
 
 ## Usuarios
 
@@ -15,6 +15,6 @@ Una aplicación web responsive y PWA que permita administrar integralmente el to
 * Árbitro
 * Público (solo consulta)
 
-## Éxito del MVP
+## Éxito operativo actual
 
-El organizador puede cargar las primeras 4 fechas, las listas de buena fe, subir planillas y publicar los próximos partidos y la tabla actualizada.
+El organizador puede configurar la competencia, inscribir equipos y jugadores por zona, programar encuentros manualmente, cargar resultados y publicar una tabla actualizada. La carga de planillas adjuntas aún no está disponible.

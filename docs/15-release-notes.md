@@ -1,5 +1,11 @@
 # Historial de versiones
 
+## 0.2.28 — Auditoría de alcance y documentación
+
+- Se actualiza toda la documentación contra el código y migraciones vigentes.
+- Se incorpora `00-current-status.md` con matriz de funcionalidades entregadas, parciales, pendientes y dependencias externas.
+- Se documentan explícitamente fixture manual, resultado/posiciones, planteles por zona y los pendientes de planillas, fixture automático, PWA y ABM de pagos.
+
 ## 0.2.27 — Calendario del dashboard por fecha
 
 - El dashboard separa los partidos en pestañas de Próximos, Hoy y Anteriores según la fecha actual de Argentina.

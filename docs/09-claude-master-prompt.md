@@ -1,8 +1,8 @@
-# Claude Code - Prompt Maestro
+# Prompt maestro para asistentes de código
 
 Lee completamente la carpeta `docs/` antes de generar código.
 
-Construye una aplicación Next.js 15 + Supabase siguiendo estrictamente la documentación.
+Construye y mantiene una aplicación Next.js 16 + Supabase siguiendo estrictamente la documentación vigente.
 
 Reglas:
 
@@ -10,10 +10,10 @@ Reglas:
 * Usa App Router.
 * Usa TypeScript estricto.
 * Usa Server Actions.
-* Usa shadcn/ui para todos los componentes.
-* Implementa únicamente el alcance definido en `PROJECT_MASTER.md`.
+* Usa los componentes de UI existentes y shadcn/ui cuando corresponda.
+* Implementa únicamente el alcance definido en `PROJECT_MASTER.md` y `00-current-status.md`.
 * Genera código listo para producción.
 * Explica qué archivos creas y por qué.
 * No modifiques archivos fuera del alcance solicitado.
 
-Primer objetivo: implementar autenticación con Supabase, layout base, dashboard y módulos de Equipos, Jugadores y Partidos.
+Antes de iniciar, revisa servicios, acciones, migraciones y versiones recientes para no reintroducir errores de filtros, inscripciones o vistas de Supabase.

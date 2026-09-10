@@ -1,46 +1,31 @@
 # PROJECT_MASTER
 
-## Proyecto
+## Proyecto y fuente de verdad
 
-Tournament Manager
+**Tournament Manager** administra torneos de fútbol amateur. El estado verificable al 10/09/2026 está en [00-current-status.md](00-current-status.md); este documento define el alcance vigente.
 
-## Objetivo
+## Alcance entregado
 
-MVP funcional en 24 horas para administrar un torneo de fútbol amateur.
+* Autenticación Supabase, recuperación de contraseña y roles.
+* Catálogo de torneos, categorías y zonas A–E; cupos, canchas y árbitros.
+* Equipos, baja lógica, logos, inscripciones y lista de buena fe por categoría/zona.
+* Jugadores con DNI, fecha de nacimiento, foto y asignación al mismo equipo en distintas zonas.
+* Fixture manual por torneo → categoría → zona → fecha, con cancha y terna arbitral.
+* Resultados, eventos, goleadores, sanciones, tabla y dashboard filtrable.
+* Consulta pública de fixture y posiciones.
 
-## Funcionalidades obligatorias del MVP
+## Pendiente de producto
 
-* Login con Supabase Auth
-* Dashboard responsive
-* Crear y editar equipos
-* Crear y editar jugadores
-* Gestionar lista de buena fe
-* Cargar planillas (PDF o imagen)
-* Crear fixture manual
-* Registrar resultados
-* Ver próximos partidos
-* Ver tabla de posiciones automática
-* Ver goleadores automáticos
-* Registrar tarjetas amarillas y rojas
-* Registrar sanciones simples
+Planillas adjuntas, fixture automático, ABM de pagos, notificaciones, PWA efectiva, multi-organización, temporadas operativas y firma digital.
 
-## Fuera del MVP (Semana 2)
+## Stack real
 
-* IA y RAG de reglamentos
-* Firma digital
-* Pagos y cuotas
-* Notificaciones
-* Multi-organización
-* Multi-temporada
-
-## Stack
-
-* Next.js 15 (App Router)
+* Next.js 16.2.10 (App Router)
 * TypeScript (strict)
 * Tailwind CSS
 * shadcn/ui
 * Supabase (Auth + PostgreSQL + Storage)
-* Vercel
+* Vercel para despliegue
 
 ## Principios
 
@@ -48,9 +33,7 @@ MVP funcional en 24 horas para administrar un torneo de fútbol amateur.
 * Server Actions
 * Validación con Zod
 * No usar `any`
-* No lógica de negocio en componentes UI
-* Todas las consultas a BD en `services/`
+* No lógica de negocio en componentes UI; servicios y Server Actions en `lib/`.
+* Las migraciones se ejecutan manualmente en Supabase y son parte del release.
 
-## Fuente de verdad
-
-Claude Code debe usar exclusivamente los archivos dentro de `docs/` como contexto del proyecto.
+La documentación describe el alcance; el código, las migraciones y el estado de Supabase determinan la capacidad efectiva.

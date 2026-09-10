@@ -15,8 +15,8 @@ Roles disponibles despues de aplicar la migracion:
 ## Aplicar la migracion
 
 1. En Supabase abrir **SQL Editor**.
-2. Copiar el contenido de `database/migrations/20260810_profiles_roles.sql`.
-3. Ejecutarlo una unica vez.
+2. Ejecutar `database/migrations/20260810_profiles_roles.sql` y luego `20260907_seed_standard_roles.sql`.
+3. Ejecutar las migraciones posteriores en orden cronológico.
 4. Todo registro nuevo creara una fila en `profiles` con el rol `PLAYER`.
 
 ## Promover el primer administrador
@@ -31,7 +31,7 @@ where profile.id = (select id from auth.users where email = 'tu-email@ejemplo.co
   and role.code = 'SUPER_ADMIN';
 ```
 
-## Asignar roles despues
+## Asignar roles después
 
 Ingresando como `SUPER_ADMIN`, ejecutar:
 
@@ -41,3 +41,5 @@ select public.assign_profile_role(
   'TOURNAMENT_ADMIN'
 );
 ```
+
+Para borrar usuarios desde Configuración se requiere `SUPABASE_SERVICE_ROLE_KEY` únicamente en el entorno servidor de Vercel; nunca debe exponerse como variable `NEXT_PUBLIC_*`.
