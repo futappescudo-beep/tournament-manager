@@ -1,5 +1,10 @@
 # Historial de versiones
 
+## 0.2.22 — Nombres de equipos en el fixture
+
+- La migración `20260913_fix_fixture_team_names.sql` actualiza `vw_fixture` para leer las inscripciones actuales de local y visitante.
+- Los partidos existentes recuperan sus nombres de equipo, cancha y árbitro sin necesidad de cargarlos nuevamente.
+
 ## 0.2.21 — Fechas por categoría y zona
 
 - Se incluye la migración `20260912_matchdays_category_zone.sql` para instalaciones anteriores que aún no tenían `category_id` y `zone_id` en `matchdays`.
