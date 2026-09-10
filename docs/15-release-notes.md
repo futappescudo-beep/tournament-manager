@@ -1,5 +1,10 @@
 # Historial de versiones
 
+## 0.2.30 — Diagnóstico de acceso a planilla
+
+- El detalle de partido deja de convertir cualquier error de Supabase en una pantalla 404.
+- Si falta la migración o el partido no se puede consultar, muestra una guía para volver al fixture y verificar `20260916_digital_match_sheet.sql`.
+
 ## 0.2.29 — Planilla digital móvil
 
 - La planilla tiene estados Preliminar, Abierta y Cerrada; al crear la preliminar se precargan los jugadores activos de ambos equipos.
