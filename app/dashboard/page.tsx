@@ -6,8 +6,12 @@ import { getDashboardCatalog, getDashboardData } from "@/lib/service/dashboard.s
 
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ tournament?: string; category?: string; zone?: string }> }) {
   const params = await searchParams;
-  const filter = { tournamentId: params.tournament, categoryId: params.category, zoneId: params.zone };
-  const [catalog, data] = await Promise.all([getDashboardCatalog(), getDashboardData(filter)]);
+  const catalog = await getDashboardCatalog();
+  const tournamentId = catalog.tournaments.some((item) => item.id === params.tournament) ? params.tournament : undefined;
+  const categoryId = tournamentId && catalog.categories.some((item) => item.id === params.category && item.tournament_id === tournamentId) ? params.category : undefined;
+  const zoneId = categoryId && catalog.zones.some((item) => item.id === params.zone && item.category_id === categoryId) ? params.zone : undefined;
+  const filter = { tournamentId, categoryId, zoneId };
+  const data = await getDashboardData(filter);
   const title = catalog.tournaments.find((item) => item.id === filter.tournamentId)?.name ?? "Todos los torneos";
   const category = catalog.categories.find((item) => item.id === filter.categoryId)?.name;
   const zone = catalog.zones.find((item) => item.id === filter.zoneId)?.name;

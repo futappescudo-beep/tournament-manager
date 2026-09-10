@@ -1,5 +1,10 @@
 # Historial de versiones
 
+## 0.2.18 — Filtros secuenciales del dashboard
+
+- El dashboard exige el orden **Torneo → Categoría → Zona**: Categoría se habilita al seleccionar un torneo y Zona al seleccionar una categoría.
+- No se muestran categorías ni zonas globales, y los parámetros fuera de ese orden se ignoran para evitar filtros inversos.
+
 ## 0.2.17 — Asignación de jugadores por categoría y zona
 
 - El alta y la asignación de jugadores ahora presentan equipo, categoría y zona en selectores separados y encadenados.

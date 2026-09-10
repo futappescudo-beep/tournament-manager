@@ -20,15 +20,10 @@ export function DashboardFilters({ catalog, filter }: Props) {
   }, [filter.tournamentId, filter.categoryId, filter.zoneId]);
 
   const categories = useMemo(
-    () => catalog.categories.filter((category) => !tournamentId || category.tournament_id === tournamentId),
+    () => catalog.categories.filter((category) => category.tournament_id === tournamentId),
     [catalog.categories, tournamentId],
   );
-  const zones = useMemo(() => {
-    if (categoryId) return catalog.zones.filter((zone) => zone.category_id === categoryId);
-    if (!tournamentId) return catalog.zones;
-    const categoryIds = new Set(categories.map((category) => category.id));
-    return catalog.zones.filter((zone) => categoryIds.has(zone.category_id));
-  }, [catalog.zones, categories, categoryId, tournamentId]);
+  const zones = useMemo(() => catalog.zones.filter((zone) => zone.category_id === categoryId), [catalog.zones, categoryId]);
 
   function navigate(next: DashboardFilter) {
     const params = new URLSearchParams();
@@ -49,23 +44,23 @@ export function DashboardFilters({ catalog, filter }: Props) {
       {catalog.tournaments.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
     </select>
     <label className="sr-only" htmlFor="dashboard-category">Categoría</label>
-    <select id="dashboard-category" value={categoryId} onChange={(event) => {
+    <select id="dashboard-category" disabled={!tournamentId} value={categoryId} onChange={(event) => {
       const value = event.target.value;
       setCategoryId(value); setZoneId("");
       navigate({ tournamentId, categoryId: value });
     }}>
-      <option value="">Todas las categorías</option>
+      <option value="">{tournamentId ? "Todas las categorías" : "Elegí primero un torneo"}</option>
       {categories.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
     </select>
     <label className="sr-only" htmlFor="dashboard-zone">Zona</label>
-    <select id="dashboard-zone" value={zoneId} onChange={(event) => {
+    <select id="dashboard-zone" disabled={!categoryId} value={zoneId} onChange={(event) => {
       const value = event.target.value;
       setZoneId(value);
       navigate({ tournamentId, categoryId, zoneId: value });
     }}>
-      <option value="">Todas las zonas</option>
+      <option value="">{categoryId ? "Todas las zonas" : "Elegí primero una categoría"}</option>
       {zones.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
     </select>
-    <p className="md:col-span-3 text-right text-xs text-stone-500" aria-live="polite">{isPending ? "Actualizando datos…" : "Los filtros se aplican automáticamente."}</p>
+    <p className="md:col-span-3 text-right text-xs text-stone-500" aria-live="polite">{isPending ? "Actualizando datos…" : "Orden de filtro: Torneo → Categoría → Zona."}</p>
   </div>;
 }
