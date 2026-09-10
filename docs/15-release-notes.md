@@ -1,5 +1,9 @@
 # Historial de versiones
 
+## 0.2.32 — Apertura de planilla compatible
+
+- La planilla obtiene los nombres de local y visitante desde las inscripciones de equipo, sin depender de nombres internos de claves foráneas en Supabase.
+
 ## 0.2.31 — Diagnóstico privado de planilla
 
 - Los fallos de carga de planilla se registran en los logs privados de Vercel para aislar errores de consulta sin exponer detalles técnicos en la pantalla.

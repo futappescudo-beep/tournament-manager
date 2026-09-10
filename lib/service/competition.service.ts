@@ -155,12 +155,13 @@ export async function getMatchReport(matchId: string): Promise<MatchReport> {
   await requireUser();
   const supabase = await createClient();
   const { data: match, error: matchError } = await supabase.from("matches")
-    .select("id,home_team_registration_id,away_team_registration_id,team_category_registrations!matches_home_team_registration_id_fkey(display_name),away:team_category_registrations!matches_away_team_registration_id_fkey(display_name)")
+    .select("id,home_team_registration_id,away_team_registration_id")
     .eq("id", matchId).is("deleted_at", null).single();
   if (matchError) throw new Error(matchError.message);
-  const matchData = match as unknown as { id: string; home_team_registration_id: string; away_team_registration_id: string; team_category_registrations: { display_name: string | null } | null; away: { display_name: string | null } | null };
+  const matchData = match as unknown as { id: string; home_team_registration_id: string; away_team_registration_id: string };
   const registrationIds = [matchData.home_team_registration_id, matchData.away_team_registration_id];
-  const [playersResult, eventTypesResult, eventsResult, entriesResult, confirmationsResult, controlResult] = await Promise.all([
+  const [registrationsResult, playersResult, eventTypesResult, eventsResult, entriesResult, confirmationsResult, controlResult] = await Promise.all([
+    supabase.from("team_category_registrations").select("id,display_name").in("id", registrationIds),
     supabase.from("player_team_registrations").select("id,team_registration_id,shirt_number,players(first_name,last_name)").in("team_registration_id", registrationIds).is("deleted_at", null).is("left_at", null).order("shirt_number"),
     supabase.from("event_types").select("id,code,name").order("display_order"),
     supabase.from("match_events").select("id,player_registration_id,event_type_id,minute,comments").eq("match_id", matchId).order("minute"),
@@ -168,14 +169,15 @@ export async function getMatchReport(matchId: string): Promise<MatchReport> {
     supabase.from("match_sheet_confirmations" as never).select("confirmation_type,confirmed_at").eq("match_id", matchId) as unknown as Promise<{ data: { confirmation_type: "REFEREE" | "HOME_DELEGATE" | "AWAY_DELEGATE"; confirmed_at: string }[] | null; error: { message: string } | null }>,
     supabase.from("match_sheet_controls" as never).select("status").eq("match_id", matchId).maybeSingle() as unknown as Promise<{ data: { status: "DRAFT" | "OPEN" | "CLOSED" } | null; error: { message: string } | null }>,
   ]);
-  for (const result of [playersResult, eventTypesResult, eventsResult, entriesResult, confirmationsResult, controlResult]) if (result.error) throw new Error(result.error.message);
+  for (const result of [registrationsResult, playersResult, eventTypesResult, eventsResult, entriesResult, confirmationsResult, controlResult]) if (result.error) throw new Error(result.error.message);
   const players = (playersResult.data ?? []).map((row) => {
     const player = row.players as unknown as { first_name: string; last_name: string } | { first_name: string; last_name: string }[] | null;
     const item = Array.isArray(player) ? player[0] : player;
     return { id: row.id, teamRegistrationId: row.team_registration_id, name: `${item?.first_name ?? "Jugador"} ${item?.last_name ?? ""}`.trim(), shirtNumber: row.shirt_number };
   });
   const eventTypes = eventTypesResult.data ?? [];
-  return { id: matchData.id, homeTeamRegistrationId: matchData.home_team_registration_id, awayTeamRegistrationId: matchData.away_team_registration_id, homeTeam: matchData.team_category_registrations?.display_name ?? "Local", awayTeam: matchData.away?.display_name ?? "Visitante", players, eventTypes, events: (eventsResult.data ?? []).map((event) => ({ id: event.id, playerName: players.find((player) => player.id === event.player_registration_id)?.name ?? "Jugador", eventName: eventTypes.find((type) => type.id === event.event_type_id)?.name ?? "Evento", minute: event.minute ?? 0, comments: event.comments })), sheetEntries: (entriesResult.data ?? []).map((entry) => ({ playerRegistrationId: entry.player_registration_id, shirtNumber: entry.shirt_number, isPresent: entry.is_present, notes: entry.notes })), confirmations: (confirmationsResult.data ?? []).map((confirmation) => ({ confirmationType: confirmation.confirmation_type, confirmedAt: confirmation.confirmed_at })), sheetStatus: controlResult.data?.status ?? null };
+  const registrations = new Map((registrationsResult.data ?? []).map((registration) => [registration.id, registration.display_name]));
+  return { id: matchData.id, homeTeamRegistrationId: matchData.home_team_registration_id, awayTeamRegistrationId: matchData.away_team_registration_id, homeTeam: registrations.get(matchData.home_team_registration_id) ?? "Local", awayTeam: registrations.get(matchData.away_team_registration_id) ?? "Visitante", players, eventTypes, events: (eventsResult.data ?? []).map((event) => ({ id: event.id, playerName: players.find((player) => player.id === event.player_registration_id)?.name ?? "Jugador", eventName: eventTypes.find((type) => type.id === event.event_type_id)?.name ?? "Evento", minute: event.minute ?? 0, comments: event.comments })), sheetEntries: (entriesResult.data ?? []).map((entry) => ({ playerRegistrationId: entry.player_registration_id, shirtNumber: entry.shirt_number, isPresent: entry.is_present, notes: entry.notes })), confirmations: (confirmationsResult.data ?? []).map((confirmation) => ({ confirmationType: confirmation.confirmation_type, confirmedAt: confirmation.confirmed_at })), sheetStatus: controlResult.data?.status ?? null };
 }
 
 export async function setMatchSheetStatus(values: MatchSheetStatusValues) {
