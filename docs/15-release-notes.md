@@ -1,5 +1,12 @@
 # Historial de versiones
 
+## 0.2.41 — Visual de gestión del fixture
+
+- La cabecera del fixture deja visibles únicamente los accesos **Generar cruces** y **Generar Play Off** para administradores.
+- Los encuentros permanecen debajo de los filtros y de las acciones de generación.
+- **Agregar excepcional** se mueve al final del listado, como acción secundaria.
+- El futuro cuadro visual de playoffs se trabajará como una pantalla o sección específica.
+
 ## 0.2.40 — Filtros y ciclo de vida del fixture
 
 - Fixture incorpora filtros encadenados Torneo → Categoría → Zona → Fase → Fecha, visibles para toda cuenta autenticada.
