@@ -1,5 +1,9 @@
 # Historial de versiones
 
+## 0.2.31 — Diagnóstico privado de planilla
+
+- Los fallos de carga de planilla se registran en los logs privados de Vercel para aislar errores de consulta sin exponer detalles técnicos en la pantalla.
+
 ## 0.2.30 — Diagnóstico de acceso a planilla
 
 - El detalle de partido deja de convertir cualquier error de Supabase en una pantalla 404.
