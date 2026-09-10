@@ -1,5 +1,9 @@
 # Historial de versiones
 
+## 0.2.26 — Tipos explícitos de tabla de posiciones
+
+- La migración de posiciones declara explícitamente como `bigint` todas las métricas acumuladas, compatible con la vista existente de Supabase.
+
 ## 0.2.25 — Compatibilidad de tipos en posiciones
 
 - Se corrige la migración de posiciones para preservar los tipos `bigint` de la vista anterior y permitir su ejecución en Supabase.

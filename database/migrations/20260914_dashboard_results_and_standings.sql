@@ -64,12 +64,12 @@ select
   coalesce(registration.display_name, team.name) as display_name,
   scope.competition_phase_id,
   null::uuid as competition_group_id,
-  coalesce(totals.played, 0) as played,
-  coalesce(totals.won, 0) as won,
-  coalesce(totals.drawn, 0) as drawn,
-  coalesce(totals.lost, 0) as lost,
-  coalesce(totals.goals_for, 0) as goals_for,
-  coalesce(totals.goals_against, 0) as goals_against
+  coalesce(totals.played, 0)::bigint as played,
+  coalesce(totals.won, 0)::bigint as won,
+  coalesce(totals.drawn, 0)::bigint as drawn,
+  coalesce(totals.lost, 0)::bigint as lost,
+  coalesce(totals.goals_for, 0)::bigint as goals_for,
+  coalesce(totals.goals_against, 0)::bigint as goals_against
 from competition_scopes scope
 join public.team_category_registrations registration
   on registration.category_id = scope.category_id
