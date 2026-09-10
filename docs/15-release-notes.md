@@ -1,5 +1,13 @@
 # Historial de versiones
 
+## 0.2.35 — Cuadros de playoff flexibles
+
+- Fixture incorpora un diseñador de cuadros para Copa de Oro, Copa de Plata u otra copa definida por la organización.
+- Cada cruce admite una ronda libre, equipos concretos o una procedencia (“Ganador de repechaje”), por lo que es posible dejar a un primero de zona directamente en semifinales.
+- La final puede identificarse y marcarse como cancha neutral desde el cuadro.
+- Los cuadros quedan como borradores independientes: no crean partidos con rivales indeterminados. La siguiente entrega programará los partidos cuando el administrador confirme cada cruce.
+- Requiere ejecutar `20260918_flexible_playoff_brackets.sql` en Supabase.
+
 ## 0.2.34 — Filtros en Posiciones
 
 - Posiciones incorpora los filtros secuenciales Torneo → Categoría → Zona del Dashboard.

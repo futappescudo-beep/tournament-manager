@@ -12,4 +12,5 @@
 | RF-008 | Consultar fixture y posiciones sin iniciar sesión | Implementado |
 | RF-009 | Subir planilla PDF o imagen | Pendiente |
 | RF-010 | Generar fixture automático | Pendiente |
+| RF-011 | Diseñar playoffs flexibles | Implementado; requiere migración 20260918 |
 | RF-011 | Administrar pagos | Parcial: solo consulta |

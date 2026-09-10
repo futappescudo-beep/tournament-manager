@@ -26,6 +26,8 @@
 
 Las inscripciones vinculan equipo, torneo, categoría y zona; son la referencia para fixture, plantel y posiciones.
 
+Los cuadros eliminatorios se modelan con `playoff_brackets` y `playoff_bracket_matches`. Un cruce puede indicar equipos concretos o una procedencia textual, como “Ganador de repechaje 1”; por eso el cuadro se puede diseñar antes de que estén resueltos todos sus partidos.
+
 ### players y player_team_registrations
 
 * id
