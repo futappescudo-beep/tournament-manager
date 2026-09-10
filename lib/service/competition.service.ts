@@ -137,6 +137,8 @@ export async function createFixtureMatch(values: FixtureMatchValues) {
     kickoff_time: values.kickoffTime,
     field_id: values.fieldId,
     referee_id: values.refereeId,
+    assistant_referee_1_id: values.assistantReferee1Id,
+    assistant_referee_2_id: values.assistantReferee2Id,
     observations: values.observations || null,
   });
   if (error) throw new Error(error.message);

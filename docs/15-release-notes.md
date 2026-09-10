@@ -1,5 +1,10 @@
 # Historial de versiones
 
+## 0.2.20 — Equipo arbitral del partido
+
+- El alta manual del fixture incorpora Árbitro, Asistente 1 y Asistente 2, tomados del maestro de árbitros.
+- Se incluye la migración `20260911_match_assistant_referees.sql`, que agrega las columnas de asistentes y asegura permisos de escritura para partidos.
+
 ## 0.2.19 — Alta de fixture por categoría y zona
 
 - El alta manual de partidos requiere el recorrido **Torneo → Categoría → Zona** antes de habilitar los equipos.

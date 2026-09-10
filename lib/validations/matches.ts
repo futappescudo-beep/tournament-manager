@@ -22,6 +22,8 @@ export const fixtureMatchSchema = z.object({
   kickoffTime: z.string().regex(/^\d{2}:\d{2}$/, "Ingresá una hora válida."),
   fieldId: optionalUuid,
   refereeId: optionalUuid,
+  assistantReferee1Id: optionalUuid,
+  assistantReferee2Id: optionalUuid,
   observations: z.string().trim().max(500, "Las observaciones no pueden superar 500 caracteres.").optional(),
 }).refine((values) => values.homeTeamRegistrationId !== values.awayTeamRegistrationId, {
   message: "El equipo local y visitante deben ser distintos.",
