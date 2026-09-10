@@ -1,5 +1,10 @@
 # Historial de versiones
 
+## 0.2.21 — Fechas por categoría y zona
+
+- Se incluye la migración `20260912_matchdays_category_zone.sql` para instalaciones anteriores que aún no tenían `category_id` y `zone_id` en `matchdays`.
+- La migración conserva las fechas existentes y permite que el fixture asigne nuevas jornadas por torneo, categoría y zona.
+
 ## 0.2.20 — Equipo arbitral del partido
 
 - El alta manual del fixture incorpora Árbitro, Asistente 1 y Asistente 2, tomados del maestro de árbitros.
