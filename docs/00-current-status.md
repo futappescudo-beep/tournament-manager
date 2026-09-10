@@ -1,6 +1,6 @@
 # Estado actual — 2026-09-10
 
-Versión de documentación: **0.2.41**. La aplicación está en una etapa funcional de operación asistida: el núcleo del torneo está implementado, mientras que automatizaciones y algunos módulos administrativos siguen pendientes.
+Versión de documentación: **0.2.42**. La aplicación está en una etapa funcional de operación asistida: el núcleo del torneo está implementado, mientras que automatizaciones y algunos módulos administrativos siguen pendientes.
 
 | Área | Estado | Alcance actual |
 | --- | --- | --- |
@@ -13,7 +13,7 @@ Versión de documentación: **0.2.41**. La aplicación está en una etapa funcio
 | Pagos | Parcial | Solo consulta de pagos existentes; no hay ABM. |
 | Planilla digital | Implementado, requiere migraciones | Preliminar → Abierta → Cerrada, planteles precargados, presentismo, eventos y confirmaciones; el cierre bloquea resultados hasta reapertura administrativa. |
 | Playoffs flexibles | Implementado, requiere migración | El administrador puede crear cuadros de Oro, Plata o personalizados, con cruces manuales, pases directos por procedencia y final neutral. La programación de partidos desde el cuadro queda pendiente. |
-| Fixture automático regular | Implementado, requiere migración | Genera una única rueda todos contra todos dentro de una zona sin programación inicial. Cada partido se programa o reprograma luego con fecha, hora, cancha y terna, sin duplicar el fixture. |
+| Fixture automático regular | Implementado, requiere migración | Completa una única rueda todos contra todos dentro de una zona sin programación inicial. Conserva los partidos ya cargados, rellena los cruces faltantes en su fecha correspondiente y no duplica enfrentamientos. |
 | Visual del fixture | Implementado | Los accesos de administración se concentran en Generar cruces y Generar Play Off; los partidos se muestran debajo de filtros y acciones. El cuadro visual eliminatorio queda como próxima etapa. |
 | Fixture automático interzonal / playoffs | Pendiente | Los interzonales y la programación de partidos desde un cruce de playoff se incorporarán en etapas posteriores. |
 | Ciclo de torneo | Implementado, requiere migración | Eliminar un torneo oculta sus fechas y partidos; cerrar y archivar conserva el historial y bloquea cambios de fixture. |

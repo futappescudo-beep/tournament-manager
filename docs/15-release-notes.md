@@ -1,5 +1,11 @@
 # Historial de versiones
 
+## 0.2.42 — Completar fixture regular
+
+- **Generar cruces** pasa a completar la rueda regular en lugar de cancelarse cuando ya existen fechas o partidos.
+- Conserva cada partido cargado y agrega sólo los enfrentamientos faltantes de la fecha correspondiente.
+- No duplica un cruce aunque la localía de un partido previo esté invertida.
+
 ## 0.2.41 — Visual de gestión del fixture
 
 - La cabecera del fixture deja visibles únicamente los accesos **Generar cruces** y **Generar Play Off** para administradores.

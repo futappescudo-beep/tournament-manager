@@ -210,23 +210,33 @@ export async function generateRegularFixture(values: RegularFixtureGeneratorValu
     supabase.from("team_category_registrations").select("id").eq("category_id", values.categoryId).eq("zone_id", values.zoneId).is("deleted_at", null).order("created_at"),
     supabase.from("match_statuses").select("id").eq("code", "SCHEDULED").maybeSingle(),
     supabase.from("competition_phases").select("id,is_elimination").eq("id", values.phaseId).is("deleted_at", null).maybeSingle(),
-    supabase.from("matchdays").select("id").eq("tournament_id", values.tournamentId).eq("category_id", values.categoryId).eq("zone_id", values.zoneId).eq("competition_phase_id", values.phaseId).is("deleted_at", null),
+    supabase.from("matchdays").select("id,round").eq("tournament_id", values.tournamentId).eq("category_id", values.categoryId).eq("zone_id", values.zoneId).eq("competition_phase_id", values.phaseId).is("deleted_at", null),
   ]);
   if (registrationsError || statusError || phaseError || matchdaysError) throw new Error(registrationsError?.message ?? statusError?.message ?? phaseError?.message ?? matchdaysError?.message ?? "No se pudo preparar el fixture.");
   if (!phase || phase.is_elimination) throw new Error("Seleccioná una fase regular para generar todos contra todos.");
   if ((registrations ?? []).length < 2) throw new Error("La zona necesita al menos dos equipos activos para generar el fixture.");
   if (!status) throw new Error("No se encontró el estado SCHEDULED para programar los partidos.");
-  const existingMatchdayIds = (existingMatchdays ?? []).map((matchday) => matchday.id);
-  if (existingMatchdayIds.length) throw new Error("Ya existe un fixture para esta zona y fase. No se creó ningún duplicado.");
   const rounds = roundRobin((registrations ?? []).map((registration) => registration.id));
-  const matchdaysPayload = rounds.map((_, index) => ({ tournament_id: values.tournamentId, category_id: values.categoryId, zone_id: values.zoneId, competition_phase_id: values.phaseId, round: index + 1, name: `Fecha ${index + 1}`, starts_at: null, is_closed: false }));
-  const { data: createdMatchdays, error: createMatchdaysError } = await supabase.from("matchdays").insert(matchdaysPayload).select("id,round");
-  if (createMatchdaysError) throw new Error(createMatchdaysError.message);
-  const matchdayByRound = new Map((createdMatchdays ?? []).map((matchday) => [matchday.round, matchday.id]));
-  const matchesPayload = rounds.flatMap((pairs, index) => pairs.map(([home, away]) => ({ matchday_id: matchdayByRound.get(index + 1), competition_phase_id: values.phaseId, home_team_registration_id: home, away_team_registration_id: away, match_status_id: status.id, match_date: null, kickoff_time: null })));
+  const existingMatchdayIds = (existingMatchdays ?? []).map((matchday) => matchday.id);
+  const { data: existingMatches, error: existingMatchesError } = existingMatchdayIds.length
+    ? await supabase.from("matches").select("matchday_id,home_team_registration_id,away_team_registration_id").in("matchday_id", existingMatchdayIds).is("deleted_at", null)
+    : { data: [], error: null };
+  if (existingMatchesError) throw new Error(existingMatchesError.message);
+  const pairKey = (first: string, second: string) => [first, second].sort().join(":");
+  const existingPairs = new Set((existingMatches ?? []).map((match) => pairKey(match.home_team_registration_id, match.away_team_registration_id)));
+  const matchdayByRound = new Map((existingMatchdays ?? []).filter((matchday) => matchday.round !== null).map((matchday) => [matchday.round, matchday.id]));
+  const missingRounds = rounds.map((_, index) => index + 1).filter((round) => !matchdayByRound.has(round));
+  if (missingRounds.length) {
+    const matchdaysPayload = missingRounds.map((round) => ({ tournament_id: values.tournamentId, category_id: values.categoryId, zone_id: values.zoneId, competition_phase_id: values.phaseId, round, name: `Fecha ${round}`, starts_at: null, is_closed: false }));
+    const { data: createdMatchdays, error: createMatchdaysError } = await supabase.from("matchdays").insert(matchdaysPayload).select("id,round");
+    if (createMatchdaysError) throw new Error(createMatchdaysError.message);
+    for (const matchday of createdMatchdays ?? []) matchdayByRound.set(matchday.round, matchday.id);
+  }
+  const matchesPayload = rounds.flatMap((pairs, index) => pairs.filter(([home, away]) => !existingPairs.has(pairKey(home, away))).map(([home, away]) => ({ matchday_id: matchdayByRound.get(index + 1), competition_phase_id: values.phaseId, home_team_registration_id: home, away_team_registration_id: away, match_status_id: status.id, match_date: null, kickoff_time: null })));
+  if (!matchesPayload.length) return { rounds: rounds.length, matches: 0, createdRounds: 0 };
   const { error: createMatchesError } = await supabase.from("matches").insert(matchesPayload);
   if (createMatchesError) throw new Error(createMatchesError.message);
-  return { rounds: rounds.length, matches: matchesPayload.length };
+  return { rounds: rounds.length, matches: matchesPayload.length, createdRounds: missingRounds.length };
 }
 
 export async function scheduleFixtureMatch(values: FixtureScheduleValues) {
