@@ -1,5 +1,10 @@
 # Historial de versiones
 
+## 0.2.39 — Partido excepcional
+
+- El alta manual se renombra a **Agregar excepcional** y explica que se usa para interzonales, desempates, repechajes, amistosos y playoffs confirmados.
+- La interfaz indica que la rueda normal de una zona se crea exclusivamente desde **Generar cruces**.
+
 ## 0.2.38 — Aviso de fixture ya existente
 
 - Si una zona ya tiene cruces en la fase seleccionada, el generador muestra un aviso comprensible y conserva el formulario abierto.

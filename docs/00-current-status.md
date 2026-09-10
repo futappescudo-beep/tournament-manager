@@ -1,6 +1,6 @@
 # Estado actual — 2026-09-10
 
-Versión de documentación: **0.2.38**. La aplicación está en una etapa funcional de operación asistida: el núcleo del torneo está implementado, mientras que automatizaciones y algunos módulos administrativos siguen pendientes.
+Versión de documentación: **0.2.39**. La aplicación está en una etapa funcional de operación asistida: el núcleo del torneo está implementado, mientras que automatizaciones y algunos módulos administrativos siguen pendientes.
 
 | Área | Estado | Alcance actual |
 | --- | --- | --- |
