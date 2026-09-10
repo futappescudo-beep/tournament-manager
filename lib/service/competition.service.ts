@@ -4,7 +4,7 @@ import type { FixtureMatchValues, ResultValues } from "@/lib/validations/matches
 import type { MatchEventValues } from "@/lib/validations/match-events";
 import type { MatchSheetConfirmationValues, MatchSheetEntryValues, MatchSheetStatusValues } from "@/lib/validations/match-events";
 
-export type FixtureMatch = { id: string; round: number | null; match_date: string | null; kickoff_time: string | null; home_team: string | null; away_team: string | null; field: string | null; referee: string | null; home_score: number | null; away_score: number | null; };
+export type FixtureMatch = { id: string; round: number | null; match_date: string | null; kickoff_time: string | null; home_team: string | null; away_team: string | null; field: string | null; referee: string | null; home_score: number | null; away_score: number | null; sheetStatus?: "DRAFT" | "OPEN" | "CLOSED" | null; };
 export type Standing = { team_registration_id: string | null; display_name: string | null; competition_phase_id: string | null; competition_group_id: string | null; played: number | null; won: number | null; drawn: number | null; lost: number | null; goals_for: number | null; goals_against: number | null; };
 export type FixtureSetup = {
   tournaments: { id: string; name: string }[];
@@ -66,7 +66,11 @@ export async function getFixture(): Promise<FixtureMatch[]> {
   const supabase = await createClient();
   const { data, error } = await supabase.from("vw_fixture").select("id,round,match_date,kickoff_time,home_team,away_team,field,referee,home_score,away_score").order("match_date").order("kickoff_time");
   if (error) throw new Error(error.message);
-  return (data ?? []) as FixtureMatch[];
+  const matches = (data ?? []) as FixtureMatch[];
+  const { data: controls, error: controlsError } = await (supabase.from("match_sheet_controls" as never).select("match_id,status") as unknown as Promise<{ data: { match_id: string; status: "DRAFT" | "OPEN" | "CLOSED" }[] | null; error: { message: string } | null }>);
+  if (controlsError) throw new Error(controlsError.message);
+  const statuses = new Map((controls ?? []).map((control) => [control.match_id, control.status]));
+  return matches.map((match) => ({ ...match, sheetStatus: statuses.get(match.id) ?? null }));
 }
 
 export async function getPublicFixture(): Promise<FixtureMatch[]> {
@@ -79,6 +83,9 @@ export async function getPublicFixture(): Promise<FixtureMatch[]> {
 export async function updateMatchResult({ matchId, homeScore, awayScore }: ResultValues) {
   await requireUser();
   const supabase = await createClient();
+  const { data: sheet, error: sheetError } = await (supabase.from("match_sheet_controls" as never).select("status").eq("match_id", matchId).maybeSingle() as unknown as Promise<{ data: { status: "DRAFT" | "OPEN" | "CLOSED" } | null; error: { message: string } | null }>);
+  if (sheetError) throw new Error(sheetError.message);
+  if (sheet?.status === "CLOSED") throw new Error("La planilla está cerrada. Solo un administrador puede reabrirla antes de editar el resultado.");
   const { data: playedStatus, error: statusError } = await supabase.from("match_statuses").select("id").eq("code", "PLAYED").maybeSingle();
   if (statusError) throw new Error(statusError.message);
   if (!playedStatus) throw new Error("Falta el estado PLAYED para registrar resultados. Ejecutá la migración 20260914_dashboard_results_and_standings.sql en Supabase.");
@@ -161,7 +168,7 @@ export async function getMatchReport(matchId: string): Promise<MatchReport> {
   const matchData = match as unknown as { id: string; home_team_registration_id: string; away_team_registration_id: string };
   const registrationIds = [matchData.home_team_registration_id, matchData.away_team_registration_id];
   const [registrationsResult, playersResult, eventTypesResult, eventsResult, entriesResult, confirmationsResult, controlResult] = await Promise.all([
-    supabase.from("team_category_registrations").select("id,display_name").in("id", registrationIds),
+    supabase.from("team_category_registrations").select("id,display_name,team_id").in("id", registrationIds),
     supabase.from("player_team_registrations").select("id,team_registration_id,shirt_number,players(first_name,last_name)").in("team_registration_id", registrationIds).is("deleted_at", null).is("left_at", null).order("shirt_number"),
     supabase.from("event_types").select("id,code,name").order("display_order"),
     supabase.from("match_events").select("id,player_registration_id,event_type_id,minute,comments").eq("match_id", matchId).order("minute"),
@@ -176,7 +183,11 @@ export async function getMatchReport(matchId: string): Promise<MatchReport> {
     return { id: row.id, teamRegistrationId: row.team_registration_id, name: `${item?.first_name ?? "Jugador"} ${item?.last_name ?? ""}`.trim(), shirtNumber: row.shirt_number };
   });
   const eventTypes = eventTypesResult.data ?? [];
-  const registrations = new Map((registrationsResult.data ?? []).map((registration) => [registration.id, registration.display_name]));
+  const registrationRows = registrationsResult.data ?? [];
+  const { data: teams, error: teamsError } = await supabase.from("teams").select("id,name").in("id", registrationRows.map((registration) => registration.team_id));
+  if (teamsError) throw new Error(teamsError.message);
+  const teamNames = new Map((teams ?? []).map((team) => [team.id, team.name]));
+  const registrations = new Map(registrationRows.map((registration) => [registration.id, registration.display_name ?? teamNames.get(registration.team_id) ?? "Equipo"]));
   return { id: matchData.id, homeTeamRegistrationId: matchData.home_team_registration_id, awayTeamRegistrationId: matchData.away_team_registration_id, homeTeam: registrations.get(matchData.home_team_registration_id) ?? "Local", awayTeam: registrations.get(matchData.away_team_registration_id) ?? "Visitante", players, eventTypes, events: (eventsResult.data ?? []).map((event) => ({ id: event.id, playerName: players.find((player) => player.id === event.player_registration_id)?.name ?? "Jugador", eventName: eventTypes.find((type) => type.id === event.event_type_id)?.name ?? "Evento", minute: event.minute ?? 0, comments: event.comments })), sheetEntries: (entriesResult.data ?? []).map((entry) => ({ playerRegistrationId: entry.player_registration_id, shirtNumber: entry.shirt_number, isPresent: entry.is_present, notes: entry.notes })), confirmations: (confirmationsResult.data ?? []).map((confirmation) => ({ confirmationType: confirmation.confirmation_type, confirmedAt: confirmation.confirmed_at })), sheetStatus: controlResult.data?.status ?? null };
 }
 

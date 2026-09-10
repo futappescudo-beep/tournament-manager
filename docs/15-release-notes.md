@@ -1,5 +1,11 @@
 # Historial de versiones
 
+## 0.2.33 — Cierre de planilla y resultados
+
+- La planilla muestra el nombre real del equipo aun cuando la inscripción no tiene `display_name`.
+- Una planilla Cerrada bloquea el botón y la actualización de resultado.
+- Solo SUPER_ADMIN o TOURNAMENT_ADMIN pueden reabrir la planilla; la migración `20260917_closed_sheet_result_lock.sql` limita la escritura de partidos a esos roles.
+
 ## 0.2.32 — Apertura de planilla compatible
 
 - La planilla obtiene los nombres de local y visitante desde las inscripciones de equipo, sin depender de nombres internos de claves foráneas en Supabase.
