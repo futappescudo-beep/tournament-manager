@@ -7,8 +7,10 @@ export type FixtureMatch = { id: string; round: number | null; match_date: strin
 export type Standing = { team_registration_id: string | null; display_name: string | null; competition_phase_id: string | null; competition_group_id: string | null; played: number | null; won: number | null; drawn: number | null; lost: number | null; goals_for: number | null; goals_against: number | null; };
 export type FixtureSetup = {
   tournaments: { id: string; name: string }[];
+  categories: { id: string; tournamentId: string; name: string }[];
+  zones: { id: string; categoryId: string; name: string }[];
   phases: { id: string; name: string }[];
-  teams: { id: string; name: string; category: string | null; zone: string | null }[];
+  teams: { id: string; name: string; categoryId: string; zoneId: string; category: string | null; zone: string | null }[];
   fields: { id: string; name: string }[];
   referees: { id: string; name: string }[];
 };
@@ -26,25 +28,29 @@ export type MatchReport = {
 export async function getFixtureSetup(): Promise<FixtureSetup> {
   await requireUser();
   const supabase = await createClient();
-  const [tournamentsResult, phasesResult, teamsResult, fieldsResult, refereesResult] = await Promise.all([
+  const [tournamentsResult, categoriesResult, zonesResult, phasesResult, teamsResult, fieldsResult, refereesResult] = await Promise.all([
     supabase.from("tournaments").select("id,name").is("deleted_at", null).order("name"),
+    supabase.from("categories").select("id,tournament_id,name").is("deleted_at", null).eq("active", true).order("display_order"),
+    supabase.from("zones").select("id,category_id,name").is("deleted_at", null).order("display_order"),
     supabase.from("competition_phases").select("id,name").is("deleted_at", null).order("display_order"),
-    supabase.from("team_category_registrations").select("id,display_name,categories(name),zones(name),teams(name)").is("deleted_at", null).order("display_name"),
+    supabase.from("team_category_registrations").select("id,category_id,zone_id,display_name,categories(name),zones(name),teams(name)").is("deleted_at", null).order("display_name"),
     supabase.from("fields").select("id,name").is("deleted_at", null).eq("active", true).order("name"),
     supabase.from("referees").select("id,first_name,last_name").is("deleted_at", null).eq("active", true).order("last_name"),
   ]);
-  for (const result of [tournamentsResult, phasesResult, teamsResult, fieldsResult, refereesResult]) {
+  for (const result of [tournamentsResult, categoriesResult, zonesResult, phasesResult, teamsResult, fieldsResult, refereesResult]) {
     if (result.error) throw new Error(result.error.message);
   }
   return {
     tournaments: tournamentsResult.data ?? [],
+    categories: (categoriesResult.data ?? []).map((category) => ({ id: category.id, tournamentId: category.tournament_id, name: category.name })),
+    zones: (zonesResult.data ?? []).map((zone) => ({ id: zone.id, categoryId: zone.category_id, name: zone.name })),
     phases: phasesResult.data ?? [],
     teams: (teamsResult.data ?? []).map((registration) => {
       const category = registration.categories as unknown as { name: string } | { name: string }[] | null;
       const zone = registration.zones as unknown as { name: string } | { name: string }[] | null;
       const team = registration.teams as unknown as { name: string } | { name: string }[] | null;
       const single = (value: typeof category) => Array.isArray(value) ? value[0] : value;
-      return { id: registration.id, name: registration.display_name ?? single(team)?.name ?? "Equipo", category: single(category)?.name ?? null, zone: single(zone)?.name ?? null };
+      return { id: registration.id, name: registration.display_name ?? single(team)?.name ?? "Equipo", categoryId: registration.category_id, zoneId: registration.zone_id, category: single(category)?.name ?? null, zone: single(zone)?.name ?? null };
     }),
     fields: fieldsResult.data ?? [],
     referees: (refereesResult.data ?? []).map((referee) => ({ id: referee.id, name: `${referee.first_name} ${referee.last_name}`.trim() })),
@@ -81,12 +87,12 @@ export async function createFixtureMatch(values: FixtureMatchValues) {
   const supabase = await createClient();
   const { data: registrations, error: registrationsError } = await supabase
     .from("team_category_registrations")
-    .select("id,category_id")
+    .select("id,category_id,zone_id")
     .in("id", [values.homeTeamRegistrationId, values.awayTeamRegistrationId])
     .is("deleted_at", null);
   if (registrationsError) throw new Error(registrationsError.message);
   if ((registrations ?? []).length !== 2) throw new Error("Uno de los equipos ya no está inscripto.");
-  if (registrations?.[0]?.category_id !== registrations?.[1]?.category_id) throw new Error("Los equipos deben pertenecer a la misma categoría.");
+  if ((registrations ?? []).some((registration) => registration.category_id !== values.categoryId || registration.zone_id !== values.zoneId)) throw new Error("Los equipos deben pertenecer a la categoría y zona seleccionadas.");
 
   const { data: status, error: statusError } = await supabase
     .from("match_statuses")
@@ -100,6 +106,8 @@ export async function createFixtureMatch(values: FixtureMatchValues) {
     .from("matchdays")
     .select("id")
     .eq("tournament_id", values.tournamentId)
+    .eq("category_id", values.categoryId)
+    .eq("zone_id", values.zoneId)
     .eq("competition_phase_id", values.phaseId)
     .eq("round", values.round)
     .is("deleted_at", null)
@@ -112,7 +120,7 @@ export async function createFixtureMatch(values: FixtureMatchValues) {
   if (!matchdayId) {
     const { data: matchday, error: createMatchdayError } = await supabase
       .from("matchdays")
-      .insert({ tournament_id: values.tournamentId, competition_phase_id: values.phaseId, round: values.round, name: `Fecha ${values.round}`, starts_at: values.matchDate, is_closed: false })
+      .insert({ tournament_id: values.tournamentId, category_id: values.categoryId, zone_id: values.zoneId, competition_phase_id: values.phaseId, round: values.round, name: `Fecha ${values.round}`, starts_at: values.matchDate, is_closed: false })
       .select("id")
       .single();
     if (createMatchdayError) throw new Error(createMatchdayError.message);

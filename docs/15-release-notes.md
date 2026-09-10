@@ -1,5 +1,10 @@
 # Historial de versiones
 
+## 0.2.19 — Alta de fixture por categoría y zona
+
+- El alta manual de partidos requiere el recorrido **Torneo → Categoría → Zona** antes de habilitar los equipos.
+- Los equipos local y visitante se limitan a la zona seleccionada, y la fecha de jornada se guarda separada por torneo, categoría y zona.
+
 ## 0.2.18 — Filtros secuenciales del dashboard
 
 - El dashboard exige el orden **Torneo → Categoría → Zona**: Categoría se habilita al seleccionar un torneo y Zona al seleccionar una categoría.

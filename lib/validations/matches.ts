@@ -12,6 +12,8 @@ export type ResultValues = z.infer<typeof resultSchema>;
 
 export const fixtureMatchSchema = z.object({
   tournamentId: z.uuid({ error: "Seleccioná un torneo válido." }),
+  categoryId: z.uuid({ error: "Seleccioná una categoría válida." }),
+  zoneId: z.uuid({ error: "Seleccioná una zona válida." }),
   phaseId: z.uuid({ error: "Seleccioná una fase válida." }),
   round: z.coerce.number().int("La fecha debe ser un número entero.").min(1, "La fecha debe ser mayor a cero.").max(99),
   homeTeamRegistrationId: z.uuid({ error: "Seleccioná el equipo local." }),
