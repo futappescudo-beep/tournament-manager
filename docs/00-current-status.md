@@ -9,7 +9,7 @@ Versión de documentación: **0.2.29**. La aplicación está en una etapa funcio
 | Equipos y planteles | Implementado | Alta, baja lógica, inscripciones, foto y jugadores por categoría/zona. |
 | Fixture | Implementado manual | Partido por torneo, categoría, zona, fecha, cancha y terna arbitral. |
 | Resultados y estadísticas | Implementado | Marcadores, eventos, goleadores, sanciones y posiciones. |
-| Dashboard / público | Implementado | Filtros encadenados y partidos próximos, de hoy y anteriores. |
+| Dashboard / posiciones / público | Implementado | Filtros encadenados y partidos próximos, de hoy y anteriores; Posiciones muestra la tabla completa del alcance seleccionado. |
 | Pagos | Parcial | Solo consulta de pagos existentes; no hay ABM. |
 | Planilla digital | Implementado, requiere migraciones | Preliminar → Abierta → Cerrada, planteles precargados, presentismo, eventos y confirmaciones; el cierre bloquea resultados hasta reapertura administrativa. |
 | Fixture automático | Pendiente | No hay generación round-robin ni validación de cruces. |

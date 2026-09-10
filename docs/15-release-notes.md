@@ -1,5 +1,10 @@
 # Historial de versiones
 
+## 0.2.34 — Filtros en Posiciones
+
+- Posiciones incorpora los filtros secuenciales Torneo → Categoría → Zona del Dashboard.
+- La tabla muestra todos los equipos correspondientes al filtro, no solo el resumen de cinco lugares del panel.
+
 ## 0.2.33 — Cierre de planilla y resultados
 
 - La planilla muestra el nombre real del equipo aun cuando la inscripción no tiene `display_name`.
