@@ -1,5 +1,10 @@
 # Historial de versiones
 
+## 0.2.24 — Recuperación de resultados históricos
+
+- La migración `20260915_backfill_played_match_status.sql` marca como jugados los partidos históricos que ya tienen goles cargados.
+- Los antiguos empates 0-0 se pueden confirmar desde Resultados para incorporarlos a la tabla.
+
 ## 0.2.23 — Resultados y posiciones actualizadas
 
 - El dashboard muestra el marcador cuando un partido tiene resultado cargado.
