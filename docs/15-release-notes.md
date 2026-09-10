@@ -1,5 +1,11 @@
 # Historial de versiones
 
+## 0.2.23 — Resultados y posiciones actualizadas
+
+- El dashboard muestra el marcador cuando un partido tiene resultado cargado.
+- Al guardar un resultado, el partido pasa a estado **Jugado** y actualiza automáticamente las posiciones.
+- La migración `20260914_dashboard_results_and_standings.sql` reconstruye `vw_standings` con los equipos e inscripciones actuales.
+
 ## 0.2.22 — Nombres de equipos en el fixture
 
 - La migración `20260913_fix_fixture_team_names.sql` actualiza `vw_fixture` para leer las inscripciones actuales de local y visitante.

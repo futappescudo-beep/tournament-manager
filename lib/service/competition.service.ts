@@ -75,9 +75,12 @@ export async function getPublicFixture(): Promise<FixtureMatch[]> {
 export async function updateMatchResult({ matchId, homeScore, awayScore }: ResultValues) {
   await requireUser();
   const supabase = await createClient();
+  const { data: playedStatus, error: statusError } = await supabase.from("match_statuses").select("id").eq("code", "PLAYED").maybeSingle();
+  if (statusError) throw new Error(statusError.message);
+  if (!playedStatus) throw new Error("Falta el estado PLAYED para registrar resultados. Ejecutá la migración 20260914_dashboard_results_and_standings.sql en Supabase.");
   const { error } = await supabase
     .from("matches")
-    .update({ home_score: homeScore, away_score: awayScore })
+    .update({ home_score: homeScore, away_score: awayScore, match_status_id: playedStatus.id })
     .eq("id", matchId);
   if (error) throw new Error(error.message);
 }
