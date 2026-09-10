@@ -11,6 +11,6 @@
 | RF-007 | Administrar canchas, árbitros y asistentes | Implementado |
 | RF-008 | Consultar fixture y posiciones sin iniciar sesión | Implementado |
 | RF-009 | Subir planilla PDF o imagen | Pendiente |
-| RF-010 | Generar fixture automático regular por zona | Implementado |
+| RF-010 | Generar fixture automático regular por zona y programarlo después | Implementado; requiere migración 20260919 |
 | RF-011 | Diseñar playoffs flexibles | Implementado; requiere migración 20260918 |
 | RF-011 | Administrar pagos | Parcial: solo consulta |

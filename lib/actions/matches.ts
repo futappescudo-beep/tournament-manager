@@ -1,8 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { fixtureMatchSchema, regularFixtureGeneratorSchema, resultSchema, type FixtureMatchValues, type RegularFixtureGeneratorValues, type ResultValues } from "@/lib/validations/matches";
-import { createFixtureMatch, generateRegularFixture, updateMatchResult } from "@/lib/service/competition.service";
+import { fixtureMatchSchema, fixtureScheduleSchema, regularFixtureGeneratorSchema, resultSchema, type FixtureMatchValues, type FixtureScheduleValues, type RegularFixtureGeneratorValues, type ResultValues } from "@/lib/validations/matches";
+import { createFixtureMatch, generateRegularFixture, scheduleFixtureMatch, updateMatchResult } from "@/lib/service/competition.service";
 
 export async function saveMatchResult(values: ResultValues) {
   const result = resultSchema.parse(values);
@@ -30,4 +30,12 @@ export async function createRegularFixture(values: RegularFixtureGeneratorValues
   revalidatePath("/standings");
   revalidatePath("/public");
   return result;
+}
+
+export async function saveFixtureSchedule(values: FixtureScheduleValues) {
+  await scheduleFixtureMatch(fixtureScheduleSchema.parse(values));
+  revalidatePath("/dashboard");
+  revalidatePath("/matches");
+  revalidatePath("/results");
+  revalidatePath("/public");
 }

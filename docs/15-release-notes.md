@@ -1,9 +1,16 @@
 # Historial de versiones
 
+## 0.2.37 — Cruces sin fecha y reprogramación
+
+- El generador regular deja de asignar fecha y hora automáticamente: crea solo los cruces y sus fechas deportivas.
+- Cada partido del fixture ofrece **Programar** o **Reprogramar** para definir día, hora, cancha y terna desde la tarjeta del encuentro.
+- La programación posterior conserva los recursos existentes al cambiar solamente la fecha u horario.
+- Requiere ejecutar `20260919_unscheduled_fixture_matches.sql` en Supabase para permitir partidos pendientes de programación.
+
 ## 0.2.36 — Fixture automático de fase regular
 
 - Fixture permite generar una rueda única de todos contra todos para una zona seleccionada.
-- El organizador define fecha inicial, intervalo entre fechas y hora base; las canchas y la terna arbitral quedan disponibles para asignación posterior.
+- Esta modalidad fue reemplazada en 0.2.37 por cruces sin programación inicial.
 - El algoritmo contempla zonas impares con un equipo libre por fecha y bloquea la operación si ya existen partidos en la misma combinación de torneo, categoría, zona y fase.
 
 ## 0.2.35 — Cuadros de playoff flexibles
