@@ -23,13 +23,17 @@ export async function createManualFixtureMatch(values: FixtureMatchValues) {
 }
 
 export async function createRegularFixture(values: RegularFixtureGeneratorValues) {
-  const result = await generateRegularFixture(regularFixtureGeneratorSchema.parse(values));
-  revalidatePath("/dashboard");
-  revalidatePath("/matches");
-  revalidatePath("/results");
-  revalidatePath("/standings");
-  revalidatePath("/public");
-  return result;
+  try {
+    const result = await generateRegularFixture(regularFixtureGeneratorSchema.parse(values));
+    revalidatePath("/dashboard");
+    revalidatePath("/matches");
+    revalidatePath("/results");
+    revalidatePath("/standings");
+    revalidatePath("/public");
+    return { ok: true as const, ...result };
+  } catch (error) {
+    return { ok: false as const, message: error instanceof Error ? error.message : "No se pudo generar el fixture." };
+  }
 }
 
 export async function saveFixtureSchedule(values: FixtureScheduleValues) {

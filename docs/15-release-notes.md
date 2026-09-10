@@ -1,5 +1,10 @@
 # Historial de versiones
 
+## 0.2.38 — Aviso de fixture ya existente
+
+- Si una zona ya tiene cruces en la fase seleccionada, el generador muestra un aviso comprensible y conserva el formulario abierto.
+- La validación deja de provocar una pantalla técnica genérica de Next.js.
+
 ## 0.2.37 — Cruces sin fecha y reprogramación
 
 - El generador regular deja de asignar fecha y hora automáticamente: crea solo los cruces y sus fechas deportivas.
