@@ -1,5 +1,9 @@
 # Historial de versiones
 
+## 0.2.25 — Compatibilidad de tipos en posiciones
+
+- Se corrige la migración de posiciones para preservar los tipos `bigint` de la vista anterior y permitir su ejecución en Supabase.
+
 ## 0.2.24 — Recuperación de resultados históricos
 
 - La migración `20260915_backfill_played_match_status.sql` marca como jugados los partidos históricos que ya tienen goles cargados.
