@@ -24,7 +24,7 @@ async function requireSuperAdmin() {
 export async function getTournamentSetup(): Promise<{ tournaments: TournamentOption[]; categories: CategorySetup[]; roles: RoleOption[]; profiles: ProfileOption[]; fields: FieldSetup[]; referees: RefereeSetup[] }> {
   const supabase = await requireSuperAdmin();
   const [tournamentsResult, categoriesResult, zonesResult, rolesResult, profilesResult, fieldsResult, refereesResult] = await Promise.all([
-    supabase.from("tournaments").select("id,name,season,description").is("deleted_at", null).order("created_at"),
+    supabase.from("tournaments").select("id,name,season,description").is("deleted_at", null).is("archived_at", null).order("created_at"),
     supabase.from("categories").select("id,tournament_id,name").is("deleted_at", null).order("display_order"),
     supabase.from("zones").select("id,category_id,name,max_teams").is("deleted_at", null).order("display_order"),
     supabase.from("roles").select("code,name").order("display_order"),
@@ -78,6 +78,13 @@ export async function updateTournament(id: string, values: TournamentValues) {
 export async function deleteTournament(id: string) {
   const supabase = await requireSuperAdmin();
   const { error } = await supabase.from("tournaments").update({ deleted_at: new Date().toISOString() }).eq("id", id).is("deleted_at", null);
+  if (error) throw new Error(error.message);
+}
+
+export async function archiveTournament(id: string) {
+  const user = await requireUser();
+  const supabase = await requireSuperAdmin();
+  const { error } = await (supabase.from("tournaments" as never).update({ archived_at: new Date().toISOString(), archived_by: user.id }).eq("id", id).is("deleted_at", null).is("archived_at", null) as unknown as Promise<{ error: { message: string } | null }>);
   if (error) throw new Error(error.message);
 }
 

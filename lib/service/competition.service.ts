@@ -4,7 +4,7 @@ import type { FixtureMatchValues, FixtureScheduleValues, RegularFixtureGenerator
 import type { MatchEventValues } from "@/lib/validations/match-events";
 import type { MatchSheetConfirmationValues, MatchSheetEntryValues, MatchSheetStatusValues } from "@/lib/validations/match-events";
 
-export type FixtureMatch = { id: string; round: number | null; match_date: string | null; kickoff_time: string | null; home_team: string | null; away_team: string | null; field: string | null; referee: string | null; home_score: number | null; away_score: number | null; fieldId?: string | null; refereeId?: string | null; assistantReferee1Id?: string | null; assistantReferee2Id?: string | null; sheetStatus?: "DRAFT" | "OPEN" | "CLOSED" | null; };
+export type FixtureMatch = { id: string; round: number | null; match_date: string | null; kickoff_time: string | null; home_team: string | null; away_team: string | null; field: string | null; referee: string | null; home_score: number | null; away_score: number | null; tournamentId?: string | null; categoryId?: string | null; zoneId?: string | null; phaseId?: string | null; phaseName?: string | null; fieldId?: string | null; refereeId?: string | null; assistantReferee1Id?: string | null; assistantReferee2Id?: string | null; sheetStatus?: "DRAFT" | "OPEN" | "CLOSED" | null; };
 export type Standing = { team_registration_id: string | null; display_name: string | null; competition_phase_id: string | null; competition_group_id: string | null; played: number | null; won: number | null; drawn: number | null; lost: number | null; goals_for: number | null; goals_against: number | null; };
 export type FixtureSetup = {
   tournaments: { id: string; name: string }[];
@@ -33,7 +33,7 @@ export async function getFixtureSetup(): Promise<FixtureSetup> {
   await requireUser();
   const supabase = await createClient();
   const [tournamentsResult, categoriesResult, zonesResult, phasesResult, teamsResult, fieldsResult, refereesResult] = await Promise.all([
-    supabase.from("tournaments").select("id,name").is("deleted_at", null).order("name"),
+    supabase.from("tournaments").select("id,name").is("deleted_at", null).is("archived_at", null).order("name"),
     supabase.from("categories").select("id,tournament_id,name").is("deleted_at", null).eq("active", true).order("display_order"),
     supabase.from("zones").select("id,category_id,name").is("deleted_at", null).order("display_order"),
     supabase.from("competition_phases").select("id,name,is_elimination").is("deleted_at", null).order("display_order"),
@@ -61,6 +61,21 @@ export async function getFixtureSetup(): Promise<FixtureSetup> {
   };
 }
 
+export async function getFixturePhases() {
+  await requireUser();
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("competition_phases").select("id,name").is("deleted_at", null).order("display_order");
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+export async function canManageFixture() {
+  await requireUser();
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("is_tournament_administrator" as never);
+  return Boolean(data);
+}
+
 export async function getFixture(): Promise<FixtureMatch[]> {
   await requireUser();
   const supabase = await createClient();
@@ -69,13 +84,22 @@ export async function getFixture(): Promise<FixtureMatch[]> {
   const matches = (data ?? []) as FixtureMatch[];
   const [controlsResult, schedulingResult] = await Promise.all([
     supabase.from("match_sheet_controls" as never).select("match_id,status") as unknown as Promise<{ data: { match_id: string; status: "DRAFT" | "OPEN" | "CLOSED" }[] | null; error: { message: string } | null }>,
-    supabase.from("matches").select("id,field_id,referee_id,assistant_referee_1_id,assistant_referee_2_id").in("id", matches.map((match) => match.id)),
+    supabase.from("matches").select("id,matchday_id,competition_phase_id,field_id,referee_id,assistant_referee_1_id,assistant_referee_2_id").in("id", matches.map((match) => match.id)),
   ]);
   const { data: controls, error: controlsError } = controlsResult;
-  if (controlsError || schedulingResult.error) throw new Error(controlsError?.message ?? schedulingResult.error?.message ?? "No se pudo cargar el fixture.");
-  const statuses = new Map((controls ?? []).map((control) => [control.match_id, control.status]));
+  if (schedulingResult.error) throw new Error(schedulingResult.error.message);
+  const statuses = new Map((controlsError ? [] : controls ?? []).map((control) => [control.match_id, control.status]));
   const schedules = new Map((schedulingResult.data ?? []).map((match) => [match.id, match]));
-  return matches.map((match) => ({ ...match, fieldId: schedules.get(match.id)?.field_id ?? null, refereeId: schedules.get(match.id)?.referee_id ?? null, assistantReferee1Id: schedules.get(match.id)?.assistant_referee_1_id ?? null, assistantReferee2Id: schedules.get(match.id)?.assistant_referee_2_id ?? null, sheetStatus: statuses.get(match.id) ?? null }));
+  const matchdayIds = [...new Set((schedulingResult.data ?? []).map((match) => match.matchday_id))];
+  const phaseIds = [...new Set((schedulingResult.data ?? []).map((match) => match.competition_phase_id))];
+  const [matchdaysResult, phasesResult] = await Promise.all([
+    supabase.from("matchdays").select("id,tournament_id,category_id,zone_id").in("id", matchdayIds),
+    supabase.from("competition_phases").select("id,name").in("id", phaseIds),
+  ]);
+  if (matchdaysResult.error || phasesResult.error) throw new Error(matchdaysResult.error?.message ?? phasesResult.error?.message ?? "No se pudo cargar el alcance del fixture.");
+  const matchdays = new Map((matchdaysResult.data ?? []).map((matchday) => [matchday.id, matchday]));
+  const phases = new Map((phasesResult.data ?? []).map((phase) => [phase.id, phase.name]));
+  return matches.map((match) => { const schedule = schedules.get(match.id); const matchday = schedule ? matchdays.get(schedule.matchday_id) : null; return { ...match, tournamentId: matchday?.tournament_id ?? null, categoryId: matchday?.category_id ?? null, zoneId: matchday?.zone_id ?? null, phaseId: schedule?.competition_phase_id ?? null, phaseName: schedule?.competition_phase_id ? phases.get(schedule.competition_phase_id) ?? null : null, fieldId: schedule?.field_id ?? null, refereeId: schedule?.referee_id ?? null, assistantReferee1Id: schedule?.assistant_referee_1_id ?? null, assistantReferee2Id: schedule?.assistant_referee_2_id ?? null, sheetStatus: statuses.get(match.id) ?? null }; });
 }
 
 export async function getPublicFixture(): Promise<FixtureMatch[]> {

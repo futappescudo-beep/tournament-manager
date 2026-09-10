@@ -1,5 +1,13 @@
 # Historial de versiones
 
+## 0.2.40 — Filtros y ciclo de vida del fixture
+
+- Fixture incorpora filtros encadenados Torneo → Categoría → Zona → Fase → Fecha, visibles para toda cuenta autenticada.
+- Los controles operativos de fixture se limitan a SUPER_ADMIN y TOURNAMENT_ADMIN.
+- Configuración ofrece **Cerrar y archivar**; el archivo conserva el historial y bloquea cambios de fechas y partidos.
+- Al eliminar un torneo, sus fechas y partidos se dan de baja lógica de forma automática.
+- Requiere ejecutar `20260920_fixture_visibility_and_tournament_lifecycle.sql` en Supabase.
+
 ## 0.2.39 — Partido excepcional
 
 - El alta manual se renombra a **Agregar excepcional** y explica que se usa para interzonales, desempates, repechajes, amistosos y playoffs confirmados.

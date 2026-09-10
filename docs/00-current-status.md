@@ -1,6 +1,6 @@
 # Estado actual — 2026-09-10
 
-Versión de documentación: **0.2.39**. La aplicación está en una etapa funcional de operación asistida: el núcleo del torneo está implementado, mientras que automatizaciones y algunos módulos administrativos siguen pendientes.
+Versión de documentación: **0.2.40**. La aplicación está en una etapa funcional de operación asistida: el núcleo del torneo está implementado, mientras que automatizaciones y algunos módulos administrativos siguen pendientes.
 
 | Área | Estado | Alcance actual |
 | --- | --- | --- |
@@ -15,10 +15,11 @@ Versión de documentación: **0.2.39**. La aplicación está en una etapa funcio
 | Playoffs flexibles | Implementado, requiere migración | El administrador puede crear cuadros de Oro, Plata o personalizados, con cruces manuales, pases directos por procedencia y final neutral. La programación de partidos desde el cuadro queda pendiente. |
 | Fixture automático regular | Implementado, requiere migración | Genera una única rueda todos contra todos dentro de una zona sin programación inicial. Cada partido se programa o reprograma luego con fecha, hora, cancha y terna, sin duplicar el fixture. |
 | Fixture automático interzonal / playoffs | Pendiente | Los interzonales y la programación de partidos desde un cruce de playoff se incorporarán en etapas posteriores. |
+| Ciclo de torneo | Implementado, requiere migración | Eliminar un torneo oculta sus fechas y partidos; cerrar y archivar conserva el historial y bloquea cambios de fixture. |
 | PWA, notificaciones, multi-organización | Pendiente | Fuera del alcance operativo actual. |
 
 ## Dependencias operativas
 
-La base debe incluir las migraciones de `database/migrations` en orden. Para la versión actual son imprescindibles las migraciones `20260908` a `20260919`, en especial las vistas de fixture/posiciones, el estado `PLAYED`, `20260916_digital_match_sheet.sql`, `20260917_closed_sheet_result_lock.sql`, `20260918_flexible_playoff_brackets.sql` y `20260919_unscheduled_fixture_matches.sql`.
+La base debe incluir las migraciones de `database/migrations` en orden. Para la versión actual son imprescindibles las migraciones `20260908` a `20260920`, en especial las vistas de fixture/posiciones, el estado `PLAYED`, `20260916_digital_match_sheet.sql`, `20260917_closed_sheet_result_lock.sql`, `20260918_flexible_playoff_brackets.sql`, `20260919_unscheduled_fixture_matches.sql` y `20260920_fixture_visibility_and_tournament_lifecycle.sql`.
 
 La publicación en Vercel está bloqueada externamente hasta iniciar sesión de nuevo en la cuenta con acceso al proyecto. El código y GitHub no dependen de esa autorización.
