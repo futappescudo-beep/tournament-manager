@@ -81,6 +81,6 @@ Las asignaciones activas vinculan un jugador con una inscripción de equipo. Dor
 * `vw_fixture`: fixture publicado con nombres de equipos y recursos.
 * `vw_standings`: posiciones a partir de partidos `PLAYED`.
 * `vw_top_scorers`: ranking de goles registrados.
-* `fields`, `referees`, `match_events`, `sanctions`, `payments` y catálogos de estado.
+* `fields`, `referees`, `match_events`, `match_sheet_entries`, `match_sheet_confirmations`, `sanctions`, `payments` y catálogos de estado.
 
-No existe hoy una tabla/flujo de documentos o planillas adjuntas en la aplicación.
+La planilla digital se controla en `match_sheet_controls` con estados `DRAFT`, `OPEN` y `CLOSED`. Al crear la preliminar, un trigger copia los jugadores activos de ambos equipos a `match_sheet_entries`. Aún no existe adjunto PDF/imagen ni generación de PDF.

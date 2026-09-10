@@ -9,3 +9,23 @@ export const matchEventSchema = z.object({
 });
 
 export type MatchEventValues = z.infer<typeof matchEventSchema>;
+
+export const matchSheetEntrySchema = z.object({
+  matchId: z.uuid(),
+  playerRegistrationId: z.uuid(),
+  teamRegistrationId: z.uuid(),
+  shirtNumber: z.coerce.number().int().min(0).max(99).nullable(),
+  isPresent: z.boolean(),
+  notes: z.string().trim().max(240).optional(),
+});
+
+export const matchSheetConfirmationSchema = z.object({
+  matchId: z.uuid(),
+  confirmationType: z.enum(["REFEREE", "HOME_DELEGATE", "AWAY_DELEGATE"]),
+});
+
+export const matchSheetStatusSchema = z.object({ matchId: z.uuid(), status: z.enum(["DRAFT", "OPEN", "CLOSED"]), closingObservations: z.string().trim().max(600).optional() });
+
+export type MatchSheetEntryValues = z.infer<typeof matchSheetEntrySchema>;
+export type MatchSheetConfirmationValues = z.infer<typeof matchSheetConfirmationSchema>;
+export type MatchSheetStatusValues = z.infer<typeof matchSheetStatusSchema>;

@@ -1,5 +1,13 @@
 # Historial de versiones
 
+## 0.2.29 — Planilla digital móvil
+
+- La planilla tiene estados Preliminar, Abierta y Cerrada; al crear la preliminar se precargan los jugadores activos de ambos equipos.
+- El detalle del partido permite controlar presentes por equipo, registrar eventos y visualizar el historial desde el teléfono mientras está Abierta.
+- Se incorporan tres constancias digitales: delegado local, delegado visitante y árbitro; cada una guarda perfil, fecha y declaración.
+- La migración `20260916_digital_match_sheet.sql` crea tablas, trigger, índices y políticas: solo administración controla los estados y no hay permiso de borrado; el rol REFEREE edita únicamente planillas Abiertas.
+- Quedan para una siguiente etapa el QR, las firmas de mayor garantía, la carga de imagen y el PDF de cierre.
+
 ## 0.2.28 — Auditoría de alcance y documentación
 
 - Se actualiza toda la documentación contra el código y migraciones vigentes.
