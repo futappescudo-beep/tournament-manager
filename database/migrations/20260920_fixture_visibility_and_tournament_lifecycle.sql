@@ -23,33 +23,6 @@ begin
 end;
 $$;
 
--- El catálogo incluye ambas etapas aun cuando todavía no haya partidos de playoff.
-insert into public.competition_phase_types (code, name, display_order)
-select 'KNOCKOUT', 'Play Off', 2
-where not exists (
-  select 1 from public.competition_phase_types where code = 'KNOCKOUT'
-);
-
-do $$
-declare
-  template_uuid uuid;
-  phase_type_uuid uuid;
-begin
-  select id into template_uuid from public.competition_templates
-  where name = 'Fixture manual' and deleted_at is null limit 1;
-  select id into phase_type_uuid from public.competition_phase_types
-  where code = 'KNOCKOUT' limit 1;
-
-  if template_uuid is not null and phase_type_uuid is not null and not exists (
-    select 1 from public.competition_phases
-    where template_id = template_uuid and name = 'Play Off' and deleted_at is null
-  ) then
-    insert into public.competition_phases (template_id, name, phase_type_id, display_order, is_elimination)
-    values (template_uuid, 'Play Off', phase_type_uuid, 2, true);
-  end if;
-end;
-$$;
-
 -- Los filtros y el fixture son de consulta general dentro de la aplicación.
 drop policy if exists fixture_authenticated_read_tournaments on public.tournaments;
 create policy fixture_authenticated_read_tournaments on public.tournaments for select to authenticated using (true);

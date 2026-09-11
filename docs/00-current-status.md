@@ -1,6 +1,6 @@
 # Estado actual — 2026-09-10
 
-Versión de documentación: **0.2.42**. La aplicación está en una etapa funcional de operación asistida: el núcleo del torneo está implementado, mientras que automatizaciones y algunos módulos administrativos siguen pendientes.
+Versión de documentación: **0.2.43**. La aplicación está en una etapa funcional de operación asistida: el núcleo del torneo está implementado, mientras que automatizaciones y algunos módulos administrativos siguen pendientes.
 
 | Área | Estado | Alcance actual |
 | --- | --- | --- |
@@ -13,6 +13,7 @@ Versión de documentación: **0.2.42**. La aplicación está en una etapa funcio
 | Pagos | Parcial | Solo consulta de pagos existentes; no hay ABM. |
 | Planilla digital | Implementado, requiere migraciones | Preliminar → Abierta → Cerrada, planteles precargados, presentismo, eventos y confirmaciones; el cierre bloquea resultados hasta reapertura administrativa. |
 | Playoffs flexibles | Implementado, requiere migración | El administrador puede crear cuadros de Oro, Plata o personalizados, con cruces manuales, pases directos por procedencia y final neutral. La programación de partidos desde el cuadro queda pendiente. |
+| Cuadro y avance de Play Off | Implementado, requiere migración | El fixture muestra las llaves por ronda. Los cruces con ambos equipos generan un partido pendiente de programación y el ganador avanza si la procedencia se declara como “Ganador del cruce N”. |
 | Fixture automático regular | Implementado, requiere migración | Completa una única rueda todos contra todos dentro de una zona sin programación inicial. Conserva los partidos ya cargados, rellena los cruces faltantes en su fecha correspondiente y no duplica enfrentamientos. |
 | Visual del fixture | Implementado | Los accesos de administración se concentran en Generar cruces y Generar Play Off; los partidos se muestran debajo de filtros y acciones. El cuadro visual eliminatorio queda como próxima etapa. |
 | Fixture automático interzonal / playoffs | Pendiente | Los interzonales y la programación de partidos desde un cruce de playoff se incorporarán en etapas posteriores. |
@@ -21,6 +22,6 @@ Versión de documentación: **0.2.42**. La aplicación está en una etapa funcio
 
 ## Dependencias operativas
 
-La base debe incluir las migraciones de `database/migrations` en orden. Para la versión actual son imprescindibles las migraciones `20260908` a `20260920`, en especial las vistas de fixture/posiciones, el estado `PLAYED`, `20260916_digital_match_sheet.sql`, `20260917_closed_sheet_result_lock.sql`, `20260918_flexible_playoff_brackets.sql`, `20260919_unscheduled_fixture_matches.sql` y `20260920_fixture_visibility_and_tournament_lifecycle.sql`.
+La base debe incluir las migraciones de `database/migrations` en orden. Para la versión actual son imprescindibles las migraciones `20260908` a `20260921`, en especial las vistas de fixture/posiciones, el estado `PLAYED`, `20260916_digital_match_sheet.sql`, `20260917_closed_sheet_result_lock.sql`, `20260918_flexible_playoff_brackets.sql`, `20260919_unscheduled_fixture_matches.sql`, `20260920_fixture_visibility_and_tournament_lifecycle.sql` y `20260921_playoff_progression.sql`.
 
 La publicación en Vercel está bloqueada externamente hasta iniciar sesión de nuevo en la cuenta con acceso al proyecto. El código y GitHub no dependen de esa autorización.

@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { FixtureMatchValues, FixtureScheduleValues, RegularFixtureGeneratorValues, ResultValues } from "@/lib/validations/matches";
 import type { MatchEventValues } from "@/lib/validations/match-events";
 import type { MatchSheetConfirmationValues, MatchSheetEntryValues, MatchSheetStatusValues } from "@/lib/validations/match-events";
+import { advancePlayoffWinner } from "@/lib/service/playoffs.service";
 
 export type FixtureMatch = { id: string; round: number | null; match_date: string | null; kickoff_time: string | null; home_team: string | null; away_team: string | null; field: string | null; referee: string | null; home_score: number | null; away_score: number | null; tournamentId?: string | null; categoryId?: string | null; zoneId?: string | null; phaseId?: string | null; phaseName?: string | null; fieldId?: string | null; refereeId?: string | null; assistantReferee1Id?: string | null; assistantReferee2Id?: string | null; sheetStatus?: "DRAFT" | "OPEN" | "CLOSED" | null; };
 export type Standing = { team_registration_id: string | null; display_name: string | null; competition_phase_id: string | null; competition_group_id: string | null; played: number | null; won: number | null; drawn: number | null; lost: number | null; goals_for: number | null; goals_against: number | null; };
@@ -123,6 +124,7 @@ export async function updateMatchResult({ matchId, homeScore, awayScore }: Resul
     .update({ home_score: homeScore, away_score: awayScore, match_status_id: playedStatus.id })
     .eq("id", matchId);
   if (error) throw new Error(error.message);
+  await advancePlayoffWinner(matchId, homeScore, awayScore);
 }
 
 export async function createFixtureMatch(values: FixtureMatchValues) {

@@ -1,5 +1,12 @@
 # Historial de versiones
 
+## 0.2.43 — Cuadro y progresión de Play Off
+
+- Fixture incorpora un cuadro visual horizontal para las llaves de Oro, Plata o personalizadas.
+- Los cruces con ambos equipos confirmados crean su partido de Play Off pendiente de programación.
+- Al registrar un resultado con ganador, éste pasa al siguiente cruce que declare la procedencia `Ganador del cruce N`.
+- Requiere ejecutar `20260921_playoff_progression.sql` en Supabase luego de las migraciones anteriores.
+
 ## 0.2.42 — Completar fixture regular
 
 - **Generar cruces** pasa a completar la rueda regular en lugar de cancelarse cuando ya existen fechas o partidos.
