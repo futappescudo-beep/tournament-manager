@@ -56,6 +56,23 @@ async function createFixtureIfReady(supabase: Awaited<ReturnType<typeof createCl
   if (linkError) throw new Error(linkError.message);
 }
 
+/** Publishes legacy drafts that were saved before fixture-match linking existed. */
+export async function publishPlayoffBracketMatches(bracketId: string) {
+  await requireUser();
+  const supabase = await createClient();
+  const { data: bracket, error: bracketError } = await (supabase.from("playoff_brackets" as never).select("id,tournament_id,category_id,name,trophy,status").eq("id", bracketId).maybeSingle() as unknown as Promise<{ data: BracketRow | null; error: { message: string; code?: string } | null }>);
+  if (bracketError || !bracket) throw new Error(bracketError?.code === "42703" ? "Falta ejecutar la migración 20260921_playoff_progression.sql en Supabase." : bracketError?.message ?? "No se encontró el cuadro de Play Off.");
+  const { data: rows, error: rowsError } = await (supabase.from("playoff_bracket_matches" as never).select("id,bracket_id,stage_name,match_order,home_team_registration_id,away_team_registration_id,home_source_label,away_source_label,home_source_match_id,away_source_match_id,fixture_match_id,winner_team_registration_id,is_neutral_venue,is_final").eq("bracket_id", bracket.id).order("match_order") as unknown as Promise<{ data: BracketMatchRow[] | null; error: { message: string; code?: string } | null }>);
+  if (rowsError) throw new Error(rowsError.code === "42703" ? "Falta ejecutar la migración 20260921_playoff_progression.sql en Supabase." : rowsError.message);
+  let created = 0;
+  for (const row of rows ?? []) {
+    if (row.fixture_match_id || !row.home_team_registration_id || !row.away_team_registration_id) continue;
+    await createFixtureIfReady(supabase, bracket, row);
+    created += 1;
+  }
+  return { created };
+}
+
 export async function createPlayoffBracket(values: PlayoffBracketValues) {
   const user = await requireUser(); const supabase = await createClient();
   const { data: category, error: categoryError } = await supabase.from("categories").select("id").eq("id", values.categoryId).eq("tournament_id", values.tournamentId).is("deleted_at", null).maybeSingle();

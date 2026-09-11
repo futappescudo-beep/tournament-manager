@@ -1,9 +1,10 @@
 import { z } from "zod";
+import { PLAYOFF_STAGES } from "@/lib/constants/playoffs";
 
 const optionalUuid = z.union([z.uuid(), z.literal("")]).transform((value) => value || null);
 
 const playoffMatchSchema = z.object({
-  stageName: z.string().trim().min(2, "Indicá la ronda del cruce.").max(80),
+  stageName: z.enum(PLAYOFF_STAGES, { error: "Seleccioná una instancia válida." }),
   homeTeamRegistrationId: optionalUuid,
   awayTeamRegistrationId: optionalUuid,
   homeSourceLabel: z.string().trim().max(80),

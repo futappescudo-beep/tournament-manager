@@ -1,5 +1,14 @@
 # Historial de versiones
 
+## 0.2.45 — Fixture separado por fase y cuadro de Play Off
+
+- Fixture se organiza en dos pestañas: **Fase regular** y **Play Off**; la agenda pública de encuentros programados queda como acceso independiente.
+- Fase regular conserva filtros Torneo → Categoría → Zona → Fase → Fecha. Play Off elimina Zona y Fecha para usar Torneo → Categoría → Instancia.
+- Las instancias se normalizan en **Octavos de final**, **Cuartos de final**, **Semifinal** y **Final**; el diseñador no admite rondas libres para mantener el cuadro consistente.
+- El cuadro eliminatorio muestra siempre las cuatro columnas y resalta la instancia seleccionada.
+- Se incorpora **Publicar cruces** para convertir borradores anteriores que ya tengan ambos equipos en partidos del fixture, sin asignarles fecha, hora o cancha.
+- Requiere ejecutar `20260921_playoff_progression.sql` y desplegar esta versión en Vercel.
+
 ## 0.2.44 — Fixture por alcance y agenda pública
 
 - Zona deja de ser obligatoria para filtrar Fase y Fecha: los Play Off se consultan por Torneo y Categoría.

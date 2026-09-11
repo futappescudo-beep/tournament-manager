@@ -65,7 +65,7 @@ export async function getFixtureSetup(): Promise<FixtureSetup> {
 export async function getFixturePhases() {
   await requireUser();
   const supabase = await createClient();
-  const { data, error } = await supabase.from("competition_phases").select("id,name").is("deleted_at", null).order("display_order");
+  const { data, error } = await supabase.from("competition_phases").select("id,name,is_elimination").is("deleted_at", null).order("display_order");
   if (error) throw new Error(error.message);
   return data ?? [];
 }
