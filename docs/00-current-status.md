@@ -1,6 +1,6 @@
 # Estado actual — 2026-09-10
 
-Versión de documentación: **0.2.43**. La aplicación está en una etapa funcional de operación asistida: el núcleo del torneo está implementado, mientras que automatizaciones y algunos módulos administrativos siguen pendientes.
+Versión de documentación: **0.2.44**. La aplicación está en una etapa funcional de operación asistida: el núcleo del torneo está implementado, mientras que automatizaciones y algunos módulos administrativos siguen pendientes.
 
 | Área | Estado | Alcance actual |
 | --- | --- | --- |
@@ -16,6 +16,7 @@ Versión de documentación: **0.2.43**. La aplicación está en una etapa funcio
 | Cuadro y avance de Play Off | Implementado, requiere migración | El fixture muestra las llaves por ronda. Los cruces con ambos equipos generan un partido pendiente de programación y el ganador avanza si la procedencia se declara como “Ganador del cruce N”. |
 | Fixture automático regular | Implementado, requiere migración | Completa una única rueda todos contra todos dentro de una zona sin programación inicial. Conserva los partidos ya cargados, rellena los cruces faltantes en su fecha correspondiente y no duplica enfrentamientos. |
 | Visual del fixture | Implementado | Los accesos de administración se concentran en Generar cruces y Generar Play Off; los partidos se muestran debajo de filtros y acciones. El cuadro visual eliminatorio queda como próxima etapa. |
+| Vistas de fixture | Implementado | La vista por torneo permite filtrar Zona opcionalmente; Fase y Fecha funcionan con Torneo + Categoría. La agenda general concentra todos los partidos que ya tienen día y hora. |
 | Fixture automático interzonal / playoffs | Pendiente | Los interzonales y la programación de partidos desde un cruce de playoff se incorporarán en etapas posteriores. |
 | Ciclo de torneo | Implementado, requiere migración | Eliminar un torneo oculta sus fechas y partidos; cerrar y archivar conserva el historial y bloquea cambios de fixture. |
 | PWA, notificaciones, multi-organización | Pendiente | Fuera del alcance operativo actual. |

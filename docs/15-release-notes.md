@@ -1,5 +1,11 @@
 # Historial de versiones
 
+## 0.2.44 — Fixture por alcance y agenda pública
+
+- Zona deja de ser obligatoria para filtrar Fase y Fecha: los Play Off se consultan por Torneo y Categoría.
+- Se incorpora la vista **Partidos programados**, una agenda transversal con todos los encuentros que ya tienen día y hora.
+- La consulta pública muestra únicamente partidos programados.
+
 ## 0.2.43 — Cuadro y progresión de Play Off
 
 - Fixture incorpora un cuadro visual horizontal para las llaves de Oro, Plata o personalizadas.
