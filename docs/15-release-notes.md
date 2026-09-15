@@ -1,5 +1,10 @@
 # Historial de versiones
 
+## 0.2.51 — Cuadros de Play Off activos
+
+- La pestaña Play Off aplica el ciclo de vida del torneo también a los cuadros y borradores: no muestra cruces de torneos archivados o eliminados.
+- El historial de llaves se conserva en Supabase sin interferir con la operación del torneo vigente.
+
 ## 0.2.50 — Posiciones por zona obligatoria
 
 - Posiciones no muestra una clasificación global cuando faltan filtros.
