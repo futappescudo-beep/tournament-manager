@@ -1,5 +1,11 @@
 # Historial de versiones
 
+## 0.2.46 — Inscripciones solo en torneos activos
+
+- El formulario de Equipos excluye categorías y zonas pertenecientes a torneos archivados.
+- La validación del servidor impide crear nuevas inscripciones en un torneo archivado, incluso fuera de la interfaz.
+- Al editar un equipo, las inscripciones históricas de torneos archivados se preservan y no se dan de baja por no aparecer en el formulario.
+
 ## 0.2.45 — Fixture separado por fase y cuadro de Play Off
 
 - Fixture se organiza en dos pestañas: **Fase regular** y **Play Off**; la agenda pública de encuentros programados queda como acceso independiente.

@@ -8,7 +8,7 @@ export async function getCategoriesWithZones(): Promise<CategoryOption[]> {
   const [categoriesResult, zonesResult, tournamentsResult] = await Promise.all([
     supabase.from("categories").select("id, tournament_id, name").eq("active", true).is("deleted_at", null).order("display_order"),
     supabase.from("zones").select("id, category_id, name").is("deleted_at", null).order("display_order"),
-    supabase.from("tournaments").select("id,name").is("deleted_at", null),
+    supabase.from("tournaments").select("id,name").is("deleted_at", null).is("archived_at", null),
   ]);
 
   if (categoriesResult.error) throw new Error(categoriesResult.error.message);

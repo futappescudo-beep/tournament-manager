@@ -27,6 +27,31 @@ function teamPayload(values: TeamFormValues) {
   };
 }
 
+async function assertActiveTournamentRegistrations(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  registrations: TeamRegistration[],
+) {
+  const categoryIds = [...new Set(registrations.map((registration) => registration.category_id))];
+  if (!categoryIds.length) return;
+  const { data: categories, error: categoriesError } = await supabase
+    .from("categories")
+    .select("id,tournament_id")
+    .in("id", categoryIds)
+    .is("deleted_at", null)
+    .eq("active", true);
+  if (categoriesError) throw new Error(categoriesError.message);
+  if ((categories ?? []).length !== categoryIds.length) throw new Error("Una categoría seleccionada ya no está activa.");
+  const tournamentIds = [...new Set((categories ?? []).map((category) => category.tournament_id))];
+  const { data: tournaments, error: tournamentsError } = await supabase
+    .from("tournaments")
+    .select("id")
+    .in("id", tournamentIds)
+    .is("deleted_at", null)
+    .is("archived_at", null);
+  if (tournamentsError) throw new Error(tournamentsError.message);
+  if ((tournaments ?? []).length !== tournamentIds.length) throw new Error("No se pueden asignar equipos a un torneo archivado.");
+}
+
 export async function getTeams() {
   await requireUser();
   const supabase = await createClient();
@@ -43,6 +68,7 @@ export async function getTeams() {
 export async function createTeam(values: TeamFormValues) {
   await requireUser();
   const supabase = await createClient();
+  await assertActiveTournamentRegistrations(supabase, values.registrations);
   const { data: team, error: teamError } = await supabase
     .from("teams")
     .insert(teamPayload(values))
@@ -63,6 +89,7 @@ export async function createTeam(values: TeamFormValues) {
 export async function updateTeam(id: string, values: TeamFormValues) {
   await requireUser();
   const supabase = await createClient();
+  await assertActiveTournamentRegistrations(supabase, values.registrations);
   const { error: teamError } = await supabase.from("teams").update(teamPayload(values)).eq("id", id).is("deleted_at", null);
   if (teamError) throw new Error(teamError.message);
 
@@ -80,8 +107,20 @@ export async function updateTeam(id: string, values: TeamFormValues) {
     .not("deleted_at", "is", null);
   if (inactiveError) throw new Error(inactiveError.message);
 
+  const currentCategoryIds = [...new Set((current ?? []).map((registration) => registration.category_id))];
+  const { data: currentCategories, error: currentCategoriesError } = currentCategoryIds.length
+    ? await supabase.from("categories").select("id,tournament_id").in("id", currentCategoryIds)
+    : { data: [], error: null };
+  if (currentCategoriesError) throw new Error(currentCategoriesError.message);
+  const currentTournamentIds = [...new Set((currentCategories ?? []).map((category) => category.tournament_id))];
+  const { data: activeTournaments, error: activeTournamentsError } = currentTournamentIds.length
+    ? await supabase.from("tournaments").select("id").in("id", currentTournamentIds).is("deleted_at", null).is("archived_at", null)
+    : { data: [], error: null };
+  if (activeTournamentsError) throw new Error(activeTournamentsError.message);
+  const activeTournamentIds = new Set((activeTournaments ?? []).map((tournament) => tournament.id));
+  const activeCurrentCategoryIds = new Set((currentCategories ?? []).filter((category) => activeTournamentIds.has(category.tournament_id)).map((category) => category.id));
   const desired = new Set(values.registrations.map(registrationKey));
-  const removals = (current ?? []).filter((registration) => !desired.has(`${registration.category_id}:${registration.zone_id}`));
+  const removals = (current ?? []).filter((registration) => activeCurrentCategoryIds.has(registration.category_id) && !desired.has(`${registration.category_id}:${registration.zone_id}`));
   const existing = new Set((current ?? []).map((registration) => `${registration.category_id}:${registration.zone_id}`));
   const additions = values.registrations.filter((registration) => !existing.has(registrationKey(registration)));
   const inactiveByKey = new Map((inactive ?? []).map((registration) => [`${registration.category_id}:${registration.zone_id}`, registration.id]));
