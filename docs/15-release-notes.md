@@ -1,5 +1,10 @@
 # Historial de versiones
 
+## 0.2.52 — Barrera de visualización para Play Off archivado
+
+- Fixture vuelve a validar cada cuadro contra el catálogo de torneos activos antes de renderizarlo.
+- Aunque una consulta de Play Off devolviera por error un registro histórico, un cuadro de un torneo archivado o eliminado ya no puede verse en la operación activa.
+
 ## 0.2.51 — Cuadros de Play Off activos
 
 - La pestaña Play Off aplica el ciclo de vida del torneo también a los cuadros y borradores: no muestra cruces de torneos archivados o eliminados.

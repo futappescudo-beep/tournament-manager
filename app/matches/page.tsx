@@ -30,13 +30,14 @@ export default async function MatchesPage({ searchParams }: { searchParams: Prom
   const zoneId = categoryId && catalog.zones.some((item) => item.id === params.zone && item.category_id === categoryId) ? params.zone : undefined;
   const phaseId = phases.some((item) => item.id === params.phase) ? params.phase : undefined;
   const selectedStage = PLAYOFF_STAGES.includes(params.stage as PlayoffStage) ? params.stage as PlayoffStage : undefined;
+  const activeTournamentIds = new Set(catalog.tournaments.map((tournament) => tournament.id));
   const round = categoryId && /^\d+$/.test(params.round ?? "") ? Number(params.round) : undefined;
   const regularPhases = phases.filter((phase) => !phase.is_elimination);
   const regularPhaseIds = new Set(regularPhases.map((phase) => phase.id));
   const regularMatches = matches.filter((match) => regularPhaseIds.has(match.phaseId ?? ""));
   const filteredRegularMatches = regularMatches.filter((match) => (!tournamentId || match.tournamentId === tournamentId) && (!categoryId || match.categoryId === categoryId) && (!zoneId || match.zoneId === zoneId) && (!phaseId || match.phaseId === phaseId) && (!round || match.round === round));
   const rounds = [...new Set(regularMatches.filter((match) => (!tournamentId || match.tournamentId === tournamentId) && (!categoryId || match.categoryId === categoryId) && (!zoneId || match.zoneId === zoneId) && (!phaseId || match.phaseId === phaseId)).map((match) => match.round).filter((item): item is number => item !== null))].sort((a, b) => a - b);
-  const filteredBrackets = brackets.filter((bracket) => (!tournamentId || bracket.tournamentId === tournamentId) && (!categoryId || bracket.categoryId === categoryId) && (!selectedStage || bracket.matches.some((match) => match.stageName === selectedStage)));
+  const filteredBrackets = brackets.filter((bracket) => activeTournamentIds.has(bracket.tournamentId) && (!tournamentId || bracket.tournamentId === tournamentId) && (!categoryId || bracket.categoryId === categoryId) && (!selectedStage || bracket.matches.some((match) => match.stageName === selectedStage)));
   const scheduled = matches.filter((match) => Boolean(match.match_date && match.kickoff_time)).sort((a, b) => `${a.match_date} ${a.kickoff_time}`.localeCompare(`${b.match_date} ${b.kickoff_time}`));
   const setup = isManager ? await getFixtureSetup() : null;
   const filterKey = [tournamentId, categoryId, zoneId, phaseId, round].filter(Boolean).join("-");
