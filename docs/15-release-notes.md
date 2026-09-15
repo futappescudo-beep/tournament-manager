@@ -1,5 +1,11 @@
 # Historial de versiones
 
+## 0.2.53 — Salida y cancelación de planilla preliminar
+
+- La planilla digital incorpora **Volver al fixture** en todas sus etapas.
+- Antes de abrirla, la administración puede usar **Cancelar preliminar**: elimina la convocatoria precargada y devuelve el partido al estado sin planilla.
+- La cancelación está protegida en Supabase y solo se permite para el estado `DRAFT`; requiere ejecutar `20260922_cancel_draft_match_sheet.sql`.
+
 ## 0.2.52 — Barrera de visualización para Play Off archivado
 
 - Fixture vuelve a validar cada cuadro contra el catálogo de torneos activos antes de renderizarlo.

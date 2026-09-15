@@ -311,6 +311,18 @@ export async function setMatchSheetStatus(values: MatchSheetStatusValues) {
   if (error) throw new Error(error.message);
 }
 
+export async function cancelDraftMatchSheet(matchId: string) {
+  await requireUser();
+  const supabase = await createClient();
+  const { data: control, error: controlLookupError } = await (supabase.from("match_sheet_controls" as never).select("status").eq("match_id", matchId).maybeSingle() as unknown as Promise<{ data: { status: "DRAFT" | "OPEN" | "CLOSED" } | null; error: { message: string } | null }>);
+  if (controlLookupError) throw new Error(controlLookupError.message);
+  if (!control || control.status !== "DRAFT") throw new Error("Solo se puede cancelar una planilla preliminar que todavía no fue abierta.");
+  const { error: entriesError } = await (supabase.from("match_sheet_entries" as never).delete().eq("match_id", matchId) as unknown as Promise<{ error: { message: string } | null }>);
+  if (entriesError) throw new Error(entriesError.message);
+  const { error: deleteError } = await (supabase.from("match_sheet_controls" as never).delete().eq("match_id", matchId).eq("status", "DRAFT") as unknown as Promise<{ error: { message: string } | null }>);
+  if (deleteError) throw new Error(deleteError.message);
+}
+
 export async function saveMatchSheetEntry(values: MatchSheetEntryValues) {
   const user = await requireUser();
   const supabase = await createClient();

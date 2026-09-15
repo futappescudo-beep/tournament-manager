@@ -25,7 +25,9 @@ export const matchSheetConfirmationSchema = z.object({
 });
 
 export const matchSheetStatusSchema = z.object({ matchId: z.uuid(), status: z.enum(["DRAFT", "OPEN", "CLOSED"]), closingObservations: z.string().trim().max(600).optional() });
+export const matchSheetCancelSchema = z.object({ matchId: z.uuid() });
 
 export type MatchSheetEntryValues = z.infer<typeof matchSheetEntrySchema>;
 export type MatchSheetConfirmationValues = z.infer<typeof matchSheetConfirmationSchema>;
 export type MatchSheetStatusValues = z.infer<typeof matchSheetStatusSchema>;
+export type MatchSheetCancelValues = z.infer<typeof matchSheetCancelSchema>;

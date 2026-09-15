@@ -1,8 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { matchEventSchema, matchSheetConfirmationSchema, matchSheetEntrySchema, matchSheetStatusSchema, type MatchEventValues, type MatchSheetConfirmationValues, type MatchSheetEntryValues, type MatchSheetStatusValues } from "@/lib/validations/match-events";
-import { createMatchEvent, confirmMatchSheet, saveMatchSheetEntry, setMatchSheetStatus } from "@/lib/service/competition.service";
+import { matchEventSchema, matchSheetCancelSchema, matchSheetConfirmationSchema, matchSheetEntrySchema, matchSheetStatusSchema, type MatchEventValues, type MatchSheetConfirmationValues, type MatchSheetEntryValues, type MatchSheetStatusValues } from "@/lib/validations/match-events";
+import { cancelDraftMatchSheet, createMatchEvent, confirmMatchSheet, saveMatchSheetEntry, setMatchSheetStatus } from "@/lib/service/competition.service";
 
 export async function saveMatchEvent(values: MatchEventValues) {
   const event = matchEventSchema.parse(values);
@@ -28,4 +28,11 @@ export async function setSheetStatus(values: MatchSheetStatusValues) {
   const sheet = matchSheetStatusSchema.parse(values);
   await setMatchSheetStatus(sheet);
   revalidatePath(`/matches/${sheet.matchId}`);
+}
+
+export async function cancelPreliminarySheet(values: { matchId: string }) {
+  const sheet = matchSheetCancelSchema.parse(values);
+  await cancelDraftMatchSheet(sheet.matchId);
+  revalidatePath(`/matches/${sheet.matchId}`);
+  revalidatePath("/matches");
 }
