@@ -43,9 +43,13 @@ export default function TeamForm({ team, categories, loading = false, onSubmit }
       logo_url: team.logo_url ?? "",
       notes: team.notes ?? "",
       active: team.active,
-      registrations: team.team_category_registrations.map((registration) => ({ category_id: registration.category_id, zone_id: registration.zone_id })),
+      // Las inscripciones de torneos archivados son historial: no se muestran ni se
+      // reenvían al guardar, para que el servicio pueda preservarlas sin reactivarlas.
+      registrations: team.team_category_registrations
+        .filter((registration) => categories.some((category) => category.id === registration.category_id && category.zones.some((zone) => zone.id === registration.zone_id)))
+        .map((registration) => ({ category_id: registration.category_id, zone_id: registration.zone_id })),
     });
-  }, [team, reset]);
+  }, [team, categories, reset]);
 
   function toggleRegistration(categoryId: string, zoneId: string) {
     const exists = registrations.some((registration) => registration.category_id === categoryId && registration.zone_id === zoneId);

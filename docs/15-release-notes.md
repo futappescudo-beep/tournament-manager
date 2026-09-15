@@ -1,5 +1,10 @@
 # Historial de versiones
 
+## 0.2.48 — Edición compatible con historial archivado
+
+- Al abrir un equipo para editarlo, el formulario excluye del envío las inscripciones históricas de torneos archivados.
+- Ahora se pueden modificar datos del equipo y sus inscripciones activas sin intentar reactivar ni invalidar el historial archivado.
+
 ## 0.2.47 — Confirmación efectiva de archivo de torneo
 
 - Archivar un torneo ahora invalida explícitamente la página de Equipos, evitando que el navegador mantenga un catálogo anterior.
