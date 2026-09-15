@@ -17,4 +17,4 @@ Una aplicación web responsive para operar un torneo desde celular o PC y public
 
 ## Éxito operativo actual
 
-El organizador puede configurar la competencia, inscribir equipos y jugadores por zona, programar encuentros manualmente, cargar resultados y publicar una tabla actualizada. La carga de planillas adjuntas aún no está disponible.
+El organizador puede configurar una competencia, inscribir equipos y jugadores por zona, generar la rueda regular, diseñar llaves de Play Off y programar sus encuentros. La planilla digital permite operar el partido desde teléfono con constancias digitales; no reemplaza todavía la necesidad de un adjunto/exportación formal. Fixture y tabla se publican en modo consulta.

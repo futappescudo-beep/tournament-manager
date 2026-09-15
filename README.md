@@ -1,6 +1,6 @@
-# Escudo Amistad
+# Escudo Amistad — Tournament Manager
 
-Aplicacion para administrar torneos de futbol. Esta entrega deja operativo el modulo de Equipos sobre el esquema actual de Supabase: equipos, categorias, zonas e inscripciones por categoria y zona.
+Aplicación web responsive para administrar torneos de fútbol amateur. Incluye operación de torneos, equipos, planteles, fixture regular, Play Off, resultados, planilla digital, archivo de torneos y consulta pública.
 
 ## Puesta en marcha
 
@@ -8,15 +8,24 @@ Aplicacion para administrar torneos de futbol. Esta entrega deja operativo el mo
 2. Completar `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY` con los datos del proyecto Supabase. No usar la clave `service_role`.
 3. Ejecutar `pnpm install` y luego `pnpm dev`.
 
-## Modulo Equipos
+## Capacidades actuales
 
-- Alta, edicion y baja logica de equipos (`deleted_at`).
-- Datos compatibles con la tabla `teams`: responsable, telefono, correo, notas y estado activo.
-- Varias inscripciones por equipo, sin repetir una combinacion categoria + zona en el formulario.
-- Catalogos leidos desde `categories` y `zones` activos.
+- Torneos activos con categorías, zonas, cupos, canchas y árbitros.
+- Equipos, jugadores, logos/fotos e inscripciones por categoría y zona.
+- Fixture manual y generación automática de una rueda regular por zona; programación posterior de día, horario, cancha y terna arbitral.
+- Play Off flexible de Oro, Plata u otra copa, con llaves y avance de ganadores.
+- Resultados, eventos, sanciones, goleadores, dashboard y posiciones.
+- Planilla digital con estados preliminar, abierta y cerrada; presentismo y confirmaciones digitales.
+- Archivo de torneo que lo excluye de la operación activa sin borrar sus datos.
 
-## Pendiente de Supabase
+## Pendientes principales
 
-El archivo `lib/types/database.types.ts` pertenece a un esquema anterior y se excluyo de lint. Regenerarlo desde el proyecto real antes de emplearlo como tipado estricto, por ejemplo con `supabase gen types typescript --project-id <project-id> > lib/types/database.types.ts`.
+- Permisos granulares por equipo delegado y partido arbitral.
+- Historial administrativo, campeones y ranking de títulos.
+- ABM de pagos, interzonales, adjuntos/PDF de planilla, notificaciones y PWA.
 
-La tabla `team_category_registrations` usa `registration_status_id`. El formulario confia en el valor por defecto configurado en la base; si no existe, debe definirse uno en Supabase o exponer el catalogo de estados en el formulario.
+## Migraciones de Supabase
+
+Ejecutar los archivos de `database/migrations` en orden cronológico, hasta `20260922_cancel_draft_match_sheet.sql`. Las migraciones son parte del release: desplegar solo el código sin aplicar la migración correspondiente puede dejar una acción visible sin permiso en la base.
+
+La documentación funcional y el plan de continuidad están en [`docs/00-current-status.md`](docs/00-current-status.md) y [`docs/16-scope-audit-20260915.md`](docs/16-scope-audit-20260915.md).

@@ -12,3 +12,6 @@
 * Roja directa = 1 fecha de suspensión automática
 * Un resultado guardado se marca como `PLAYED`; los históricos con goles requieren la migración de backfill.
 * La autorización real depende de RLS y de los roles de Supabase; la restricción exclusiva al árbitro asignado requiere validación adicional.
+* La fase regular implementada es una sola rueda todos contra todos dentro de cada zona; el interzonal es futuro.
+* Los cruces de Play Off son a partido único. El cuadro admite asignación manual de equipos, procedencias de ganadores y final marcada como cancha neutral.
+* Un torneo archivado deja de ofrecerse para inscripciones, fixture y Play Off activos, pero conserva sus datos para una futura consulta histórica.

@@ -14,6 +14,8 @@
 * id
 * name
 * season
+* archived_at, archived_by
+* deleted_at
 * created_at
 
 ### teams y team_category_registrations
@@ -43,12 +45,11 @@ Las asignaciones activas vinculan un jugador con una inscripción de equipo. Dor
 ### matches y matchdays
 
 * id
-* matchday_id (la jornada tiene torneo, categoría y zona)
-* round_number
+* matchday_id (la jornada tiene torneo, categoría, zona, fase y número de fecha)
 * match_date
 * field_id, referee_id, assistant_referee_1_id, assistant_referee_2_id
-* home_team_id
-* away_team_id
+* home_team_registration_id
+* away_team_registration_id
 * home_score
 * away_score
 * status (scheduled, played, postponed)
@@ -84,5 +85,8 @@ Las asignaciones activas vinculan un jugador con una inscripción de equipo. Dor
 * `vw_standings`: posiciones a partir de partidos `PLAYED`.
 * `vw_top_scorers`: ranking de goles registrados.
 * `fields`, `referees`, `match_events`, `match_sheet_entries`, `match_sheet_confirmations`, `sanctions`, `payments` y catálogos de estado.
+* `playoff_brackets` y `playoff_bracket_matches` conservan torneo/categoría, instancias, procedencias, vínculo al partido de fixture y ganador.
 
-La planilla digital se controla en `match_sheet_controls` con estados `DRAFT`, `OPEN` y `CLOSED`. Al crear la preliminar, un trigger copia los jugadores activos de ambos equipos a `match_sheet_entries`. Aún no existe adjunto PDF/imagen ni generación de PDF.
+La planilla digital se controla en `match_sheet_controls` con estados `DRAFT`, `OPEN` y `CLOSED`. Al crear la preliminar, un trigger copia los jugadores activos de ambos equipos a `match_sheet_entries`; mientras está en `DRAFT` puede cancelarse y eliminar esa convocatoria. Aún no existe adjunto PDF/imagen ni generación de PDF.
+
+No existe por ahora una tabla de campeones/títulos ni una proyección histórica para ranking: deberá agregarse sin borrar los datos de torneos archivados.

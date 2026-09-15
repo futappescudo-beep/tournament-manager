@@ -2,7 +2,7 @@
 
 ## Proyecto y fuente de verdad
 
-**Tournament Manager** administra torneos de fútbol amateur. El estado verificable al 10/09/2026 está en [00-current-status.md](00-current-status.md); este documento define el alcance vigente.
+**Tournament Manager** administra torneos de fútbol amateur. El estado verificable al 15/09/2026 está en [00-current-status.md](00-current-status.md); el contraste funcional completo está en [16-scope-audit-20260915.md](16-scope-audit-20260915.md).
 
 ## Alcance entregado
 
@@ -10,13 +10,15 @@
 * Catálogo de torneos, categorías y zonas A–E; cupos, canchas y árbitros.
 * Equipos, baja lógica, logos, inscripciones y lista de buena fe por categoría/zona.
 * Jugadores con DNI, fecha de nacimiento, foto y asignación al mismo equipo en distintas zonas.
-* Fixture manual por torneo → categoría → zona → fecha, con cancha y terna arbitral.
-* Resultados, eventos, goleadores, sanciones, tabla y dashboard filtrable.
-* Consulta pública de fixture y posiciones.
+* Fixture manual y automático de una rueda por zona; los cruces se crean primero y se programan después con fecha, hora, cancha y terna arbitral.
+* Fase regular y Play Off separados, con cuadro flexible de Copa de Oro, Plata o personalizado, avance de ganadores y final neutral configurable.
+* Planilla digital móvil: preliminar, abierta y cerrada; convocatoria precargada, presentismo, eventos, confirmaciones digitales y cancelación de preliminar.
+* Resultados, eventos, goleadores, sanciones, tabla y dashboard filtrable; equipos con cero partidos visibles en su zona.
+* Consulta pública global de fixture y posiciones; ciclo de torneo con eliminación lógica y archivo.
 
 ## Pendiente de producto
 
-Planillas adjuntas, fixture automático, ABM de pagos, notificaciones, PWA efectiva, multi-organización, temporadas operativas y firma digital.
+Adjuntos/exportación de planilla, fixture interzonal, ABM de pagos, notificaciones, PWA efectiva, historial administrativo, títulos/ranking, multi-organización, temporadas con aislamiento real y permisos granulares por equipo/partido.
 
 ## Stack real
 

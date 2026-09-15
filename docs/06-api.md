@@ -18,7 +18,9 @@
 
 * createMatch
 * updateMatch
-* `createManualFixtureMatch`, `saveMatchResult` y eventos de partido.
+* `createManualFixtureMatch`, `createRegularFixture`, `saveFixtureSchedule`, `saveMatchResult` y eventos de partido.
+* Planilla: `setSheetStatus`, `saveSheetEntry`, `confirmSheet` y `cancelPreliminarySheet`.
+* Play Off: `savePlayoffBracket` y `publishPlayoffBracket`.
 
 ## Estadísticas
 
@@ -27,6 +29,8 @@
 
 ## Documentos
 
+No hay acciones para adjuntar, exportar o firmar documentos en formato PDF/imagen.
+
 ## Consultas
 
-`competition.service.ts`, `dashboard.service.ts` y `settings.service.ts` concentran fixture, resultados, posiciones, catálogos y recursos. No hay API REST pública general: `/api/teams` es una ruta puntual; el resto usa Server Actions.
+`competition.service.ts`, `dashboard.service.ts`, `playoffs.service.ts` y `settings.service.ts` concentran fixture, resultados, posiciones, cuadros y catálogos. No hay API REST pública general: `/api/teams` es una ruta puntual; el resto usa Server Actions.

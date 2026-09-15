@@ -1,18 +1,20 @@
 # Roadmap vigente
 
-## Estabilización inmediata
+## Estabilización previa a producción
 
-1. Verificar en Supabase las migraciones hasta `20260915_backfill_played_match_status.sql`.
-2. Reautenticar Vercel, vincular el proyecto correcto y publicar el commit vigente.
-3. Prueba manual completa: catálogo → equipo → jugador → fixture → resultado → dashboard/público.
+1. Verificar en Supabase las migraciones hasta `20260922_cancel_draft_match_sheet.sql`.
+2. Prueba completa de cada rol: administrador, delegado, árbitro, jugador y consulta pública; registrar los permisos que excedan el alcance.
+3. Prueba de ciclo completo en una base limpia: torneo → equipos → planteles → rueda regular → resultados → Play Off → archivo.
+4. Revisión móvil de fixture, planilla, resultados y formularios críticos.
 
-## Próxima prioridad funcional
+## Próxima prioridad funcional recomendada
 
-1. Adjuntar y consultar planillas de partido.
-2. Generar fixture interzonal opcional y programar partidos desde cruces de playoff confirmados.
-3. Endurecer RLS por equipo y partido asignado.
-4. Añadir desempates reglamentarios y filtros a vistas completas de posiciones/goleadores.
+1. Endurecer RLS por equipo delegado y partido arbitral, más pruebas de roles. Es el bloqueo principal antes de abrir la operación a terceros.
+2. Historial administrativo: torneos archivados, ficha de partido/observaciones, campeones por copa/categoría y ranking de títulos.
+3. ABM de pagos: conceptos, vencimientos, estados, comprobantes y vista por equipo/zona.
+4. Fixture interzonal opcional y criterios de clasificación configurables a Oro/Plata, con resaltado en posiciones.
+5. Desempates reglamentarios, exportación/adjunto de planilla y ajustes visuales mobile-first.
 
 ## Posterior
 
-ABM de pagos, notificaciones, PWA, organizaciones y temporadas con aislamiento real.
+Notificaciones, PWA instalable/offline, organizaciones y temporadas con aislamiento real.
