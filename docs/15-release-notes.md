@@ -1,5 +1,10 @@
 # Historial de versiones
 
+## 0.2.50 — Posiciones por zona obligatoria
+
+- Posiciones no muestra una clasificación global cuando faltan filtros.
+- La tabla se habilita únicamente al completar Torneo → Categoría → Zona; de otro modo indica claramente qué falta seleccionar.
+
 ## 0.2.49 — Vistas activas y resumen de equipos
 
 - Fixture y agenda pública excluyen partidos cuyo torneo fue archivado o eliminado.
