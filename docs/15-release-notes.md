@@ -1,5 +1,11 @@
 # Historial de versiones
 
+## 0.2.49 — Vistas activas y resumen de equipos
+
+- Fixture y agenda pública excluyen partidos cuyo torneo fue archivado o eliminado.
+- Posiciones muestra desde el inicio todos los equipos inscriptos en el alcance elegido, con métricas en cero si todavía no registraron partidos.
+- Equipos incorpora un resumen filtrable Torneo → Categoría → Zona, que lista los equipos activos asignados a la zona seleccionada.
+
 ## 0.2.48 — Edición compatible con historial archivado
 
 - Al abrir un equipo para editarlo, el formulario excluye del envío las inscripciones históricas de torneos archivados.

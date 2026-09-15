@@ -36,7 +36,7 @@ export async function getDashboardData(filter: DashboardFilter, standingsLimit =
     : filter.tournamentId
       ? activeCategories.filter((category) => category.tournament_id === filter.tournamentId).map((category) => category.id)
       : activeCategories.map((category) => category.id);
-  let registrationsQuery = supabase.from("team_category_registrations").select("id,team_id,teams!inner(id,active,deleted_at)").is("deleted_at", null).is("teams.deleted_at", null).eq("teams.active", true);
+  let registrationsQuery = supabase.from("team_category_registrations").select("id,team_id,display_name,teams!inner(id,name,active,deleted_at)").is("deleted_at", null).is("teams.deleted_at", null).eq("teams.active", true);
   if (categoryIds.length) registrationsQuery = registrationsQuery.in("category_id", categoryIds);
   if (filter.zoneId) registrationsQuery = registrationsQuery.eq("zone_id", filter.zoneId);
   const { data: registrations, error } = await registrationsQuery;
@@ -46,6 +46,13 @@ export async function getDashboardData(filter: DashboardFilter, standingsLimit =
   const [playersResult, matchesResult, fixture, standings] = await Promise.all([supabase.from("player_team_registrations").select("player_id").is("deleted_at", null).is("left_at", null).in("team_registration_id", registrationIds), supabase.from("matches").select("id,home_score,away_score").is("deleted_at", null).in("home_team_registration_id", registrationIds), getFixture(), getStandings()]);
   if (playersResult.error) throw new Error(playersResult.error.message); if (matchesResult.error) throw new Error(matchesResult.error.message);
   const matchIds = new Set((matchesResult.data ?? []).map((item) => item.id));
-  const filteredStandings = standings.filter((item) => item.team_registration_id && registrationIds.includes(item.team_registration_id)).sort((a, b) => points(b) - points(a));
-  return { teamCount, playerCount: new Set((playersResult.data ?? []).map((item) => item.player_id)).size, goalCount: (matchesResult.data ?? []).reduce((sum, item) => sum + (item.home_score ?? 0) + (item.away_score ?? 0), 0), matches: fixture.filter((item) => matchIds.has(item.id)), standings: standingsLimit > 0 ? filteredStandings.slice(0, standingsLimit) : filteredStandings };
+  const standingsByRegistration = new Map(standings.filter((item) => item.team_registration_id && registrationIds.includes(item.team_registration_id)).map((item) => [item.team_registration_id, item]));
+  const scopedStandings = (registrations ?? []).map((registration) => {
+    const existing = standingsByRegistration.get(registration.id);
+    if (existing) return existing;
+    const team = registration.teams as unknown as { name: string } | { name: string }[] | null;
+    const teamName = Array.isArray(team) ? team[0]?.name : team?.name;
+    return { team_registration_id: registration.id, display_name: registration.display_name ?? teamName ?? "Equipo", competition_phase_id: null, competition_group_id: null, played: 0, won: 0, drawn: 0, lost: 0, goals_for: 0, goals_against: 0 } satisfies Standing;
+  }).sort((a, b) => points(b) - points(a) || ((b.goals_for ?? 0) - (b.goals_against ?? 0)) - ((a.goals_for ?? 0) - (a.goals_against ?? 0)) || (b.goals_for ?? 0) - (a.goals_for ?? 0) || (a.display_name ?? "").localeCompare(b.display_name ?? "", "es-AR"));
+  return { teamCount, playerCount: new Set((playersResult.data ?? []).map((item) => item.player_id)).size, goalCount: (matchesResult.data ?? []).reduce((sum, item) => sum + (item.home_score ?? 0) + (item.away_score ?? 0), 0), matches: fixture.filter((item) => matchIds.has(item.id)), standings: standingsLimit > 0 ? scopedStandings.slice(0, standingsLimit) : scopedStandings };
 }

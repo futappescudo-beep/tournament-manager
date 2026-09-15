@@ -99,15 +99,34 @@ export async function getFixture(): Promise<FixtureMatch[]> {
   ]);
   if (matchdaysResult.error || phasesResult.error) throw new Error(matchdaysResult.error?.message ?? phasesResult.error?.message ?? "No se pudo cargar el alcance del fixture.");
   const matchdays = new Map((matchdaysResult.data ?? []).map((matchday) => [matchday.id, matchday]));
+  const tournamentIds = [...new Set((matchdaysResult.data ?? []).map((matchday) => matchday.tournament_id))];
+  const { data: activeTournaments, error: tournamentsError } = tournamentIds.length
+    ? await supabase.from("tournaments").select("id").in("id", tournamentIds).is("deleted_at", null).is("archived_at", null)
+    : { data: [], error: null };
+  if (tournamentsError) throw new Error(tournamentsError.message);
+  const activeTournamentIds = new Set((activeTournaments ?? []).map((tournament) => tournament.id));
   const phases = new Map((phasesResult.data ?? []).map((phase) => [phase.id, phase.name]));
-  return matches.map((match) => { const schedule = schedules.get(match.id); const matchday = schedule ? matchdays.get(schedule.matchday_id) : null; return { ...match, tournamentId: matchday?.tournament_id ?? null, categoryId: matchday?.category_id ?? null, zoneId: matchday?.zone_id ?? null, phaseId: schedule?.competition_phase_id ?? null, phaseName: schedule?.competition_phase_id ? phases.get(schedule.competition_phase_id) ?? null : null, fieldId: schedule?.field_id ?? null, refereeId: schedule?.referee_id ?? null, assistantReferee1Id: schedule?.assistant_referee_1_id ?? null, assistantReferee2Id: schedule?.assistant_referee_2_id ?? null, sheetStatus: statuses.get(match.id) ?? null }; });
+  return matches.filter((match) => { const schedule = schedules.get(match.id); const matchday = schedule ? matchdays.get(schedule.matchday_id) : null; return Boolean(matchday && activeTournamentIds.has(matchday.tournament_id)); }).map((match) => { const schedule = schedules.get(match.id); const matchday = schedule ? matchdays.get(schedule.matchday_id) : null; return { ...match, tournamentId: matchday?.tournament_id ?? null, categoryId: matchday?.category_id ?? null, zoneId: matchday?.zone_id ?? null, phaseId: schedule?.competition_phase_id ?? null, phaseName: schedule?.competition_phase_id ? phases.get(schedule.competition_phase_id) ?? null : null, fieldId: schedule?.field_id ?? null, refereeId: schedule?.referee_id ?? null, assistantReferee1Id: schedule?.assistant_referee_1_id ?? null, assistantReferee2Id: schedule?.assistant_referee_2_id ?? null, sheetStatus: statuses.get(match.id) ?? null }; });
 }
 
 export async function getPublicFixture(): Promise<FixtureMatch[]> {
   const supabase = await createClient();
   const { data, error } = await supabase.from("vw_fixture").select("id,round,match_date,kickoff_time,home_team,away_team,field,referee,home_score,away_score").order("match_date").order("kickoff_time");
   if (error) throw new Error(error.message);
-  return (data ?? []) as FixtureMatch[];
+  const matches = (data ?? []) as FixtureMatch[];
+  if (!matches.length) return [];
+  const { data: schedules, error: schedulesError } = await supabase.from("matches").select("id,matchday_id").in("id", matches.map((match) => match.id));
+  if (schedulesError) throw new Error(schedulesError.message);
+  const matchdayIds = [...new Set((schedules ?? []).map((match) => match.matchday_id))];
+  const { data: matchdays, error: matchdaysError } = await supabase.from("matchdays").select("id,tournament_id").in("id", matchdayIds);
+  if (matchdaysError) throw new Error(matchdaysError.message);
+  const tournamentIds = [...new Set((matchdays ?? []).map((matchday) => matchday.tournament_id))];
+  const { data: activeTournaments, error: tournamentsError } = await supabase.from("tournaments").select("id").in("id", tournamentIds).is("deleted_at", null).is("archived_at", null);
+  if (tournamentsError) throw new Error(tournamentsError.message);
+  const activeTournamentIds = new Set((activeTournaments ?? []).map((tournament) => tournament.id));
+  const matchdaysById = new Map((matchdays ?? []).map((matchday) => [matchday.id, matchday.tournament_id]));
+  const matchTournamentIds = new Map((schedules ?? []).map((match) => [match.id, matchdaysById.get(match.matchday_id)]));
+  return matches.filter((match) => activeTournamentIds.has(matchTournamentIds.get(match.id) ?? ""));
 }
 
 export async function updateMatchResult({ matchId, homeScore, awayScore }: ResultValues) {

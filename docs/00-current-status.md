@@ -1,14 +1,14 @@
 # Estado actual — 2026-09-10
 
-Versión de documentación: **0.2.48**. La aplicación está en una etapa funcional de operación asistida: el núcleo del torneo está implementado, mientras que automatizaciones y algunos módulos administrativos siguen pendientes.
+Versión de documentación: **0.2.49**. La aplicación está en una etapa funcional de operación asistida: el núcleo del torneo está implementado, mientras que automatizaciones y algunos módulos administrativos siguen pendientes.
 
 | Área | Estado | Alcance actual |
 | --- | --- | --- |
 | Acceso y roles | Implementado | Auth, recuperación de clave, roles y administración de usuarios. |
 | Catálogos | Implementado | Torneos, categorías, zonas A–E, cupos, canchas y árbitros. |
 | Equipos y planteles | Implementado | Alta, baja lógica, inscripciones, foto y jugadores por categoría/zona. Los torneos archivados solo permanecen como historial: no se ofrecen para nuevas inscripciones. |
-| Fixture | Implementado manual | Partido por torneo, categoría, zona, fecha, cancha y terna arbitral. |
-| Resultados y estadísticas | Implementado | Marcadores, eventos, goleadores, sanciones y posiciones. |
+| Fixture | Implementado manual | Partido por torneo, categoría, zona, fecha, cancha y terna arbitral. Los encuentros de torneos archivados o eliminados no se muestran en vistas activas. |
+| Resultados y estadísticas | Implementado | Marcadores, eventos, goleadores, sanciones y posiciones. La tabla incluye equipos inscriptos con estadísticas en cero antes de disputar partidos. |
 | Dashboard / posiciones / público | Implementado | Filtros encadenados y partidos próximos, de hoy y anteriores; Posiciones muestra la tabla completa del alcance seleccionado. |
 | Pagos | Parcial | Solo consulta de pagos existentes; no hay ABM. |
 | Planilla digital | Implementado, requiere migraciones | Preliminar → Abierta → Cerrada, planteles precargados, presentismo, eventos y confirmaciones; el cierre bloquea resultados hasta reapertura administrativa. |
