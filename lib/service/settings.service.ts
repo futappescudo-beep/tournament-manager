@@ -84,8 +84,9 @@ export async function deleteTournament(id: string) {
 export async function archiveTournament(id: string) {
   const user = await requireUser();
   const supabase = await requireSuperAdmin();
-  const { error } = await (supabase.from("tournaments" as never).update({ archived_at: new Date().toISOString(), archived_by: user.id }).eq("id", id).is("deleted_at", null).is("archived_at", null) as unknown as Promise<{ error: { message: string } | null }>);
+  const { data, error } = await (supabase.from("tournaments" as never).update({ archived_at: new Date().toISOString(), archived_by: user.id }).eq("id", id).is("deleted_at", null).is("archived_at", null).select("id").maybeSingle() as unknown as Promise<{ data: { id: string } | null; error: { message: string } | null }>);
   if (error) throw new Error(error.message);
+  if (!data) throw new Error("El torneo no se pudo archivar porque ya estaba archivado, fue eliminado o no tenés permisos para modificarlo.");
 }
 
 export async function createCategory(values: CategoryValues) {

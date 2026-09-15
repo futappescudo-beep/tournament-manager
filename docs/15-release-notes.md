@@ -1,5 +1,10 @@
 # Historial de versiones
 
+## 0.2.47 — Confirmación efectiva de archivo de torneo
+
+- Archivar un torneo ahora invalida explícitamente la página de Equipos, evitando que el navegador mantenga un catálogo anterior.
+- La operación exige que Supabase devuelva el torneo actualizado; si no pudo marcarse como archivado, la interfaz deja de informar un éxito incorrecto.
+
 ## 0.2.46 — Inscripciones solo en torneos activos
 
 - El formulario de Equipos excluye categorías y zonas pertenecientes a torneos archivados.
