@@ -20,9 +20,9 @@ select
   coalesce(away_registration.display_name, away_team.name) as away_team,
   field.name as field,
   nullif(concat_ws(' ', referee.first_name, referee.last_name), '') as referee,
-  nullif(concat_ws(' ', supervisor.first_name, supervisor.last_name), '') as supervisor,
   m.home_score,
-  m.away_score
+  m.away_score,
+  nullif(concat_ws(' ', supervisor.first_name, supervisor.last_name), '') as supervisor
 from public.matches m
 left join public.matchdays md on md.id = m.matchday_id
 left join public.team_category_registrations home_registration on home_registration.id = m.home_team_registration_id
