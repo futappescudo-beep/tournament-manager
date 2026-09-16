@@ -45,6 +45,16 @@ export const deleteProfileSchema = z.object({
 
 export type DeleteProfileValues = z.infer<typeof deleteProfileSchema>;
 
+export const teamDelegateSchema = z.object({
+  teamId: z.uuid({ error: "El equipo seleccionado no es válido." }),
+  profileId: z.uuid({ error: "El usuario seleccionado no es válido." }),
+});
+export const teamDelegateRemovalSchema = z.object({
+  teamId: z.uuid({ error: "El equipo seleccionado no es válido." }),
+});
+export type TeamDelegateValues = z.infer<typeof teamDelegateSchema>;
+export type TeamDelegateRemovalValues = z.infer<typeof teamDelegateRemovalSchema>;
+
 export const zoneCapacitySchema = z.object({ zoneId: z.uuid(), maxTeams: z.coerce.number().int().min(2).max(100).nullable() });
 export const tournamentIdSchema = z.uuid();
 export const categoryIdSchema = z.uuid();

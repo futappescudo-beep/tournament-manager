@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { categoryIdSchema, categorySchema, deleteProfileSchema, fieldIdSchema, fieldSchema, profileRoleSchema, refereeIdSchema, refereeSchema, tournamentIdSchema, tournamentSchema, zoneCapacitySchema, zoneIdSchema, zoneSchema, type CategoryValues, type DeleteProfileValues, type FieldValues, type ProfileRoleValues, type RefereeValues, type TournamentValues, type ZoneValues } from "@/lib/validations/settings";
+import { categoryIdSchema, categorySchema, deleteProfileSchema, fieldIdSchema, fieldSchema, profileRoleSchema, refereeIdSchema, refereeSchema, teamDelegateRemovalSchema, teamDelegateSchema, tournamentIdSchema, tournamentSchema, zoneCapacitySchema, zoneIdSchema, zoneSchema, type CategoryValues, type DeleteProfileValues, type FieldValues, type ProfileRoleValues, type RefereeValues, type TeamDelegateRemovalValues, type TeamDelegateValues, type TournamentValues, type ZoneValues } from "@/lib/validations/settings";
 import * as SettingsService from "@/lib/service/settings.service";
 
 export async function createTournament(values: TournamentValues) { const result = await SettingsService.createTournament(tournamentSchema.parse(values)); revalidatePath("/settings"); revalidatePath("/teams"); return result; }
@@ -9,6 +9,8 @@ export async function createCategory(values: CategoryValues) { const result = aw
 export async function createZone(values: ZoneValues) { const result = await SettingsService.createZone(zoneSchema.parse(values)); revalidatePath("/settings"); revalidatePath("/teams"); return result; }
 export async function updateProfileRole(values: ProfileRoleValues) { await SettingsService.assignProfileRole(profileRoleSchema.parse(values)); revalidatePath("/settings"); }
 export async function deleteProfile(values: DeleteProfileValues) { await SettingsService.deleteProfile(deleteProfileSchema.parse(values)); revalidatePath("/settings"); }
+export async function assignTeamDelegate(values: TeamDelegateValues) { await SettingsService.assignTeamDelegate(teamDelegateSchema.parse(values)); revalidatePath("/settings"); revalidatePath("/matches"); }
+export async function removeTeamDelegate(values: TeamDelegateRemovalValues) { await SettingsService.removeTeamDelegate(teamDelegateRemovalSchema.parse(values)); revalidatePath("/settings"); revalidatePath("/matches"); }
 export async function updateTournament(id: string, values: TournamentValues) { const result = await SettingsService.updateTournament(tournamentIdSchema.parse(id), tournamentSchema.parse(values)); revalidatePath("/settings"); revalidatePath("/dashboard"); return result; }
 export async function deleteTournament(id: string) { await SettingsService.deleteTournament(tournamentIdSchema.parse(id)); revalidatePath("/settings"); revalidatePath("/dashboard"); revalidatePath("/teams"); }
 export async function archiveTournament(id: string) { await SettingsService.archiveTournament(tournamentIdSchema.parse(id)); revalidatePath("/settings"); revalidatePath("/matches"); revalidatePath("/dashboard"); revalidatePath("/teams"); }

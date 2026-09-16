@@ -1,10 +1,10 @@
 # Estado actual — 2026-09-15
 
-Versión de documentación: **0.2.54**. La aplicación está en una etapa funcional de operación asistida: el núcleo del torneo está implementado, mientras que automatizaciones y algunos módulos administrativos siguen pendientes.
+Versión de documentación: **0.2.55**. La aplicación está en una etapa funcional de operación asistida: el núcleo del torneo está implementado, mientras que automatizaciones y algunos módulos administrativos siguen pendientes.
 
 | Área | Estado | Alcance actual |
 | --- | --- | --- |
-| Acceso y roles | Implementado con brechas | Auth, recuperación de clave, roles y administración de usuarios. Falta restringir `TEAM_MANAGER` a sus equipos y `REFEREE` a sus partidos asignados. |
+| Acceso y roles | Implementado con brechas | Auth, recuperación de clave, roles y administración de usuarios. El superadministrador puede designar un único delegado (usuario con rol Jugador) por equipo, con acceso sólo a su planilla y confirmación. Falta vincular la cuenta arbitral compartida a una designación por partido. |
 | Catálogos | Implementado | Torneos, categorías, zonas A–E, cupos, canchas y árbitros. |
 | Equipos y planteles | Implementado | Alta, baja lógica, inscripciones, foto y jugadores por categoría/zona. Los torneos archivados solo permanecen como historial: no se ofrecen para nuevas inscripciones. |
 | Fixture | Implementado manual | Partido por torneo, categoría, zona, fecha, cancha, terna arbitral y veedor opcional. Los encuentros de torneos archivados o eliminados no se muestran en vistas activas. |
@@ -19,11 +19,11 @@ Versión de documentación: **0.2.54**. La aplicación está en una etapa funcio
 | Fixture automático interzonal / playoffs | Pendiente | Los interzonales y la programación de partidos desde un cruce de playoff se incorporarán en etapas posteriores. |
 | Ciclo de torneo | Implementado, requiere migración | Eliminar un torneo oculta sus fechas y partidos; cerrar y archivar conserva el historial y bloquea cambios de fixture. |
 | Historial, títulos y ranking | Pendiente | Los datos de un torneo archivado se conservan, pero aún no hay pantalla administrativa de consulta histórica, registro de campeones ni ranking de títulos. |
-| Permisos granulares | Pendiente | La interfaz y las políticas siguen siendo amplias para delegado y árbitro; requiere vincular responsables a equipos y árbitros a partidos. |
+| Permisos granulares | Parcial | Delegado único por equipo con RLS de lectura/confirmación de sus partidos. La cuenta `REFEREE` compartida mantiene alcance sobre planillas abiertas; aún no hay restricción individual por designación. |
 | PWA, notificaciones, multi-organización | Pendiente | No hay manifest, service worker, instalación, notificaciones push ni aislamiento por organización. |
 
 ## Dependencias operativas
 
-La base debe incluir las migraciones de `database/migrations` en orden. Para la versión actual son imprescindibles las migraciones `20260908` a `20260923`, en especial las vistas de fixture/posiciones, el estado `PLAYED`, `20260916_digital_match_sheet.sql`, `20260917_closed_sheet_result_lock.sql`, `20260918_flexible_playoff_brackets.sql`, `20260919_unscheduled_fixture_matches.sql`, `20260920_fixture_visibility_and_tournament_lifecycle.sql`, `20260921_playoff_progression.sql`, `20260922_cancel_draft_match_sheet.sql` y `20260923_match_supervisor.sql`. Los cuadros creados antes de ejecutar la última migración se publican con el botón **Publicar cruces**.
+La base debe incluir las migraciones de `database/migrations` en orden. Para la versión actual son imprescindibles las migraciones `20260908` a `20260924`, en especial las vistas de fixture/posiciones, el estado `PLAYED`, `20260916_digital_match_sheet.sql`, `20260917_closed_sheet_result_lock.sql`, `20260918_flexible_playoff_brackets.sql`, `20260919_unscheduled_fixture_matches.sql`, `20260920_fixture_visibility_and_tournament_lifecycle.sql`, `20260921_playoff_progression.sql`, `20260922_cancel_draft_match_sheet.sql`, `20260923_match_supervisor.sql` y `20260924_team_delegates.sql`. Los cuadros creados antes de ejecutar la última migración se publican con el botón **Publicar cruces**.
 
 El repositorio `main` es la fuente de despliegue de Vercel. Antes de una prueba funcional, confirmar que Vercel haya publicado el commit más reciente y ejecutar las migraciones pendientes en el mismo proyecto de Supabase.

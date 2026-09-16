@@ -28,6 +28,8 @@
 
 Las inscripciones vinculan equipo, torneo, categoría y zona; son la referencia para fixture, plantel y posiciones.
 
+`team_delegate_assignments` asigna un único perfil con rol global `PLAYER` a cada equipo. La asignación se realiza mediante funciones protegidas para `SUPER_ADMIN` y permite al delegado ver y confirmar únicamente las planillas de partidos de ese equipo.
+
 Los cuadros eliminatorios se modelan con `playoff_brackets` y `playoff_bracket_matches`. Un cruce puede indicar equipos concretos o una procedencia textual, como “Ganador de repechaje 1”; por eso el cuadro se puede diseñar antes de que estén resueltos todos sus partidos.
 
 ### players y player_team_registrations

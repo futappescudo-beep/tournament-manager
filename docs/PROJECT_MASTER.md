@@ -12,13 +12,13 @@
 * Jugadores con DNI, fecha de nacimiento, foto y asignación al mismo equipo en distintas zonas.
 * Fixture manual y automático de una rueda por zona; los cruces se crean primero y se programan después con fecha, hora, cancha, terna arbitral y veedor opcional.
 * Fase regular y Play Off separados, con cuadro flexible de Copa de Oro, Plata o personalizado, avance de ganadores y final neutral configurable.
-* Planilla digital móvil: preliminar, abierta y cerrada; convocatoria precargada, presentismo, eventos, confirmaciones digitales y cancelación de preliminar.
+* Planilla digital móvil: preliminar, abierta y cerrada; convocatoria precargada, presentismo, eventos, confirmaciones digitales y cancelación de preliminar. El superadministrador designa un delegado Jugador único por equipo para confirmar sólo sus propios partidos.
 * Resultados, eventos, goleadores, sanciones, tabla y dashboard filtrable; equipos con cero partidos visibles en su zona.
 * Consulta pública global de fixture y posiciones; ciclo de torneo con eliminación lógica y archivo.
 
 ## Pendiente de producto
 
-Adjuntos/exportación de planilla, fixture interzonal, ABM de pagos, notificaciones, PWA efectiva, historial administrativo, títulos/ranking, multi-organización, temporadas con aislamiento real y permisos granulares por equipo/partido.
+Adjuntos/exportación de planilla, fixture interzonal, ABM de pagos, notificaciones, PWA efectiva, historial administrativo, títulos/ranking, multi-organización, temporadas con aislamiento real y restricción individual de la cuenta arbitral por designación.
 
 ## Stack real
 

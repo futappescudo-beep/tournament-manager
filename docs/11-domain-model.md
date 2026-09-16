@@ -6,4 +6,6 @@ Una `Matchday` pertenece a torneo, categoría, zona y fase. Un `Match` enlaza jo
 
 Una `MatchSheetControl` gobierna la planilla digital del partido: `DRAFT` precarga convocatoria, `OPEN` habilita la carga y `CLOSED` inmoviliza el resultado. Las `MatchSheetEntry` registran presentismo y las `MatchSheetConfirmation` dejan constancia digital.
 
+Un `TeamDelegateAssignment` vincula un `Profile` con rol global `PLAYER` a un único `Team`; sólo `SUPER_ADMIN` puede crear, reemplazar o quitar ese vínculo. El delegado puede consultar y confirmar la planilla de los partidos de su equipo, sin editar presentismo, eventos, resultado ni la configuración deportiva.
+
 Un `PlayoffBracket` pertenece a un torneo y categoría. Sus `PlayoffBracketMatch` pueden partir de equipos concretos o de otros cruces; al definirse un ganador se completa la llave siguiente y se crea el partido de fixture cuando ambas partes estén resueltas. El archivo de torneo conserva el dominio original; la capa de historia consultable todavía no existe.

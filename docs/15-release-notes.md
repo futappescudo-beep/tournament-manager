@@ -1,5 +1,11 @@
 # Historial de versiones
 
+## 0.2.55 — Delegado único por equipo
+
+- Configuración permite al **SUPER_ADMIN** asignar, reemplazar o quitar un delegado por equipo.
+- El delegado conserva el rol global **Jugador** y sólo lee/confirmar la planilla abierta de sus propios partidos; no edita convocatoria, eventos ni resultados.
+- Requiere ejecutar `20260924_team_delegates.sql` en Supabase.
+
 ## 0.2.54 — Veedor en la designación y planilla
 
 - Cada partido permite designar un **veedor** opcional desde el padrón existente de árbitros, separado del árbitro principal y asistentes.

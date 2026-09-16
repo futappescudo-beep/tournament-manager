@@ -18,5 +18,5 @@
 | RF-014 | Generar fixture interzonal opcional | Pendiente |
 | RF-015 | Administrar pagos (ABM, estados y comprobantes) | Parcial: solo consulta |
 | RF-016 | Consultar historial de torneos, campeones y ranking de títulos | Pendiente |
-| RF-017 | Aplicar permisos por equipo delegado y partido arbitral | Pendiente |
+| RF-017 | Aplicar permisos por equipo delegado y partido arbitral | Parcial: delegado único por equipo, con acceso de lectura y confirmación a sus planillas; falta acotar la cuenta arbitral compartida por designación |
 | RF-018 | Instalar la aplicación y enviar notificaciones | Pendiente: PWA y push |

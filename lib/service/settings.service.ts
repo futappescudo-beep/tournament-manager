@@ -1,6 +1,6 @@
 import { requireUser } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
-import type { CategoryValues, FieldValues, RefereeValues, TournamentValues, ZoneValues } from "@/lib/validations/settings";
+import type { CategoryValues, FieldValues, RefereeValues, TeamDelegateRemovalValues, TeamDelegateValues, TournamentValues, ZoneValues } from "@/lib/validations/settings";
 import type { ProfileRoleValues } from "@/lib/validations/settings";
 import type { DeleteProfileValues } from "@/lib/validations/settings";
 import { redirect } from "next/navigation";
@@ -12,6 +12,8 @@ export type RoleOption = { code: string; name: string };
 export type ProfileOption = { id: string; first_name: string; last_name: string; role_code: string };
 export type FieldSetup = { id: string; name: string };
 export type RefereeSetup = { id: string; first_name: string; last_name: string };
+export type TeamSetup = { id: string; name: string };
+export type TeamDelegateAssignment = { teamId: string; profileId: string; teamName: string; profileName: string };
 
 async function requireSuperAdmin() {
   await requireUser();
@@ -21,9 +23,9 @@ async function requireSuperAdmin() {
   return supabase;
 }
 
-export async function getTournamentSetup(): Promise<{ tournaments: TournamentOption[]; categories: CategorySetup[]; roles: RoleOption[]; profiles: ProfileOption[]; fields: FieldSetup[]; referees: RefereeSetup[] }> {
+export async function getTournamentSetup(): Promise<{ tournaments: TournamentOption[]; categories: CategorySetup[]; roles: RoleOption[]; profiles: ProfileOption[]; fields: FieldSetup[]; referees: RefereeSetup[]; teams: TeamSetup[]; delegateAssignments: TeamDelegateAssignment[] }> {
   const supabase = await requireSuperAdmin();
-  const [tournamentsResult, categoriesResult, zonesResult, rolesResult, profilesResult, fieldsResult, refereesResult] = await Promise.all([
+  const [tournamentsResult, categoriesResult, zonesResult, rolesResult, profilesResult, fieldsResult, refereesResult, teamsResult, delegateAssignmentsResult] = await Promise.all([
     supabase.from("tournaments").select("id,name,season,description").is("deleted_at", null).is("archived_at", null).order("created_at"),
     supabase.from("categories").select("id,tournament_id,name").is("deleted_at", null).order("display_order"),
     supabase.from("zones").select("id,category_id,name,max_teams").is("deleted_at", null).order("display_order"),
@@ -31,6 +33,8 @@ export async function getTournamentSetup(): Promise<{ tournaments: TournamentOpt
     supabase.from("profiles").select("id,first_name,last_name,roles(code)").eq("active", true).order("first_name"),
     supabase.from("fields").select("id,name").is("deleted_at", null).eq("active", true).order("name"),
     supabase.from("referees").select("id,first_name,last_name").is("deleted_at", null).eq("active", true).order("last_name"),
+    supabase.from("teams").select("id,name").is("deleted_at", null).eq("active", true).order("name"),
+    supabase.from("team_delegate_assignments" as never).select("team_id,profile_id") as unknown as Promise<{ data: { team_id: string; profile_id: string }[] | null; error: { message: string } | null }>,
   ]);
   if (tournamentsResult.error) throw new Error(tournamentsResult.error.message);
   if (categoriesResult.error) throw new Error(categoriesResult.error.message);
@@ -39,11 +43,33 @@ export async function getTournamentSetup(): Promise<{ tournaments: TournamentOpt
   if (profilesResult.error) throw new Error(profilesResult.error.message);
   if (fieldsResult.error) throw new Error(fieldsResult.error.message);
   if (refereesResult.error) throw new Error(refereesResult.error.message);
+  if (teamsResult.error) throw new Error(teamsResult.error.message);
+  if (delegateAssignmentsResult.error) throw new Error(delegateAssignmentsResult.error.message);
   const profiles = (profilesResult.data ?? []).map((profile) => {
     const roles = profile.roles as unknown as { code: string }[] | { code: string } | null;
     return { id: profile.id, first_name: profile.first_name, last_name: profile.last_name, role_code: Array.isArray(roles) ? roles[0]?.code ?? "PLAYER" : roles?.code ?? "PLAYER" };
   });
-  return { tournaments: tournamentsResult.data ?? [], categories: (categoriesResult.data ?? []).map((category) => ({ ...category, zones: (zonesResult.data ?? []).filter((zone) => zone.category_id === category.id).map((zone) => ({ id: zone.id, name: zone.name, max_teams: zone.max_teams })) })), roles: (rolesResult.data ?? []) as RoleOption[], profiles, fields: fieldsResult.data ?? [], referees: refereesResult.data ?? [] };
+  const teams = teamsResult.data ?? [];
+  const teamNames = new Map(teams.map((team) => [team.id, team.name]));
+  const profileNames = new Map(profiles.map((profile) => [profile.id, `${profile.first_name} ${profile.last_name}`.trim()]));
+  const delegateAssignments = (delegateAssignmentsResult.data ?? []).flatMap((assignment) => {
+    const teamName = teamNames.get(assignment.team_id);
+    const profileName = profileNames.get(assignment.profile_id);
+    return teamName && profileName ? [{ teamId: assignment.team_id, profileId: assignment.profile_id, teamName, profileName }] : [];
+  });
+  return { tournaments: tournamentsResult.data ?? [], categories: (categoriesResult.data ?? []).map((category) => ({ ...category, zones: (zonesResult.data ?? []).filter((zone) => zone.category_id === category.id).map((zone) => ({ id: zone.id, name: zone.name, max_teams: zone.max_teams })) })), roles: (rolesResult.data ?? []) as RoleOption[], profiles, fields: fieldsResult.data ?? [], referees: refereesResult.data ?? [], teams, delegateAssignments };
+}
+
+export async function assignTeamDelegate(values: TeamDelegateValues) {
+  const supabase = await requireSuperAdmin();
+  const { error } = await supabase.rpc("assign_team_delegate" as never, { target_team_id: values.teamId, target_profile_id: values.profileId } as never);
+  if (error) throw new Error(error.message);
+}
+
+export async function removeTeamDelegate(values: TeamDelegateRemovalValues) {
+  const supabase = await requireSuperAdmin();
+  const { error } = await supabase.rpc("remove_team_delegate" as never, { target_team_id: values.teamId } as never);
+  if (error) throw new Error(error.message);
 }
 
 export async function assignProfileRole({ userId, roleCode }: ProfileRoleValues) {
