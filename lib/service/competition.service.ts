@@ -5,7 +5,7 @@ import type { MatchEventValues } from "@/lib/validations/match-events";
 import type { MatchSheetConfirmationValues, MatchSheetEntryValues, MatchSheetStatusValues } from "@/lib/validations/match-events";
 import { advancePlayoffWinner } from "@/lib/service/playoffs.service";
 
-export type FixtureMatch = { id: string; round: number | null; match_date: string | null; kickoff_time: string | null; home_team: string | null; away_team: string | null; field: string | null; referee: string | null; home_score: number | null; away_score: number | null; tournamentId?: string | null; categoryId?: string | null; zoneId?: string | null; phaseId?: string | null; phaseName?: string | null; fieldId?: string | null; refereeId?: string | null; assistantReferee1Id?: string | null; assistantReferee2Id?: string | null; sheetStatus?: "DRAFT" | "OPEN" | "CLOSED" | null; };
+export type FixtureMatch = { id: string; round: number | null; match_date: string | null; kickoff_time: string | null; home_team: string | null; away_team: string | null; field: string | null; referee: string | null; supervisor: string | null; home_score: number | null; away_score: number | null; tournamentId?: string | null; categoryId?: string | null; zoneId?: string | null; phaseId?: string | null; phaseName?: string | null; fieldId?: string | null; refereeId?: string | null; assistantReferee1Id?: string | null; assistantReferee2Id?: string | null; supervisorRefereeId?: string | null; sheetStatus?: "DRAFT" | "OPEN" | "CLOSED" | null; };
 export type Standing = { team_registration_id: string | null; display_name: string | null; competition_phase_id: string | null; competition_group_id: string | null; played: number | null; won: number | null; drawn: number | null; lost: number | null; goals_for: number | null; goals_against: number | null; };
 export type FixtureSetup = {
   tournaments: { id: string; name: string }[];
@@ -26,7 +26,8 @@ export type MatchReport = {
   eventTypes: { id: string; code: string; name: string }[];
   events: { id: string; playerName: string; eventName: string; minute: number; comments: string | null }[];
   sheetEntries: { playerRegistrationId: string; shirtNumber: number | null; isPresent: boolean; notes: string | null }[];
-  confirmations: { confirmationType: "REFEREE" | "HOME_DELEGATE" | "AWAY_DELEGATE"; confirmedAt: string }[];
+  officials: { referee: string | null; assistant1: string | null; assistant2: string | null; supervisor: string | null };
+  confirmations: { confirmationType: "REFEREE" | "SUPERVISOR" | "HOME_DELEGATE" | "AWAY_DELEGATE"; confirmedAt: string }[];
   sheetStatus: "DRAFT" | "OPEN" | "CLOSED" | null;
 };
 
@@ -80,12 +81,12 @@ export async function canManageFixture() {
 export async function getFixture(): Promise<FixtureMatch[]> {
   await requireUser();
   const supabase = await createClient();
-  const { data, error } = await supabase.from("vw_fixture").select("id,round,match_date,kickoff_time,home_team,away_team,field,referee,home_score,away_score").order("match_date").order("kickoff_time");
+  const { data, error } = await supabase.from("vw_fixture").select("id,round,match_date,kickoff_time,home_team,away_team,field,referee,supervisor,home_score,away_score").order("match_date").order("kickoff_time");
   if (error) throw new Error(error.message);
   const matches = (data ?? []) as FixtureMatch[];
   const [controlsResult, schedulingResult] = await Promise.all([
     supabase.from("match_sheet_controls" as never).select("match_id,status") as unknown as Promise<{ data: { match_id: string; status: "DRAFT" | "OPEN" | "CLOSED" }[] | null; error: { message: string } | null }>,
-    supabase.from("matches").select("id,matchday_id,competition_phase_id,field_id,referee_id,assistant_referee_1_id,assistant_referee_2_id").in("id", matches.map((match) => match.id)),
+    supabase.from("matches").select("id,matchday_id,competition_phase_id,field_id,referee_id,assistant_referee_1_id,assistant_referee_2_id,supervisor_referee_id").in("id", matches.map((match) => match.id)),
   ]);
   const { data: controls, error: controlsError } = controlsResult;
   if (schedulingResult.error) throw new Error(schedulingResult.error.message);
@@ -106,12 +107,12 @@ export async function getFixture(): Promise<FixtureMatch[]> {
   if (tournamentsError) throw new Error(tournamentsError.message);
   const activeTournamentIds = new Set((activeTournaments ?? []).map((tournament) => tournament.id));
   const phases = new Map((phasesResult.data ?? []).map((phase) => [phase.id, phase.name]));
-  return matches.filter((match) => { const schedule = schedules.get(match.id); const matchday = schedule ? matchdays.get(schedule.matchday_id) : null; return Boolean(matchday && activeTournamentIds.has(matchday.tournament_id)); }).map((match) => { const schedule = schedules.get(match.id); const matchday = schedule ? matchdays.get(schedule.matchday_id) : null; return { ...match, tournamentId: matchday?.tournament_id ?? null, categoryId: matchday?.category_id ?? null, zoneId: matchday?.zone_id ?? null, phaseId: schedule?.competition_phase_id ?? null, phaseName: schedule?.competition_phase_id ? phases.get(schedule.competition_phase_id) ?? null : null, fieldId: schedule?.field_id ?? null, refereeId: schedule?.referee_id ?? null, assistantReferee1Id: schedule?.assistant_referee_1_id ?? null, assistantReferee2Id: schedule?.assistant_referee_2_id ?? null, sheetStatus: statuses.get(match.id) ?? null }; });
+  return matches.filter((match) => { const schedule = schedules.get(match.id); const matchday = schedule ? matchdays.get(schedule.matchday_id) : null; return Boolean(matchday && activeTournamentIds.has(matchday.tournament_id)); }).map((match) => { const schedule = schedules.get(match.id); const matchday = schedule ? matchdays.get(schedule.matchday_id) : null; return { ...match, tournamentId: matchday?.tournament_id ?? null, categoryId: matchday?.category_id ?? null, zoneId: matchday?.zone_id ?? null, phaseId: schedule?.competition_phase_id ?? null, phaseName: schedule?.competition_phase_id ? phases.get(schedule.competition_phase_id) ?? null : null, fieldId: schedule?.field_id ?? null, refereeId: schedule?.referee_id ?? null, assistantReferee1Id: schedule?.assistant_referee_1_id ?? null, assistantReferee2Id: schedule?.assistant_referee_2_id ?? null, supervisorRefereeId: schedule?.supervisor_referee_id ?? null, sheetStatus: statuses.get(match.id) ?? null }; });
 }
 
 export async function getPublicFixture(): Promise<FixtureMatch[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase.from("vw_fixture").select("id,round,match_date,kickoff_time,home_team,away_team,field,referee,home_score,away_score").order("match_date").order("kickoff_time");
+  const { data, error } = await supabase.from("vw_fixture").select("id,round,match_date,kickoff_time,home_team,away_team,field,referee,supervisor,home_score,away_score").order("match_date").order("kickoff_time");
   if (error) throw new Error(error.message);
   const matches = (data ?? []) as FixtureMatch[];
   if (!matches.length) return [];
@@ -203,6 +204,7 @@ export async function createFixtureMatch(values: FixtureMatchValues) {
     referee_id: values.refereeId,
     assistant_referee_1_id: values.assistantReferee1Id,
     assistant_referee_2_id: values.assistantReferee2Id,
+    supervisor_referee_id: values.supervisorRefereeId,
     observations: values.observations || null,
   });
   if (error) throw new Error(error.message);
@@ -263,7 +265,7 @@ export async function generateRegularFixture(values: RegularFixtureGeneratorValu
 export async function scheduleFixtureMatch(values: FixtureScheduleValues) {
   await requireUser();
   const supabase = await createClient();
-  const { error } = await supabase.from("matches").update({ match_date: values.matchDate, kickoff_time: values.kickoffTime, field_id: values.fieldId, referee_id: values.refereeId, assistant_referee_1_id: values.assistantReferee1Id, assistant_referee_2_id: values.assistantReferee2Id }).eq("id", values.matchId).is("deleted_at", null);
+  const { error } = await supabase.from("matches").update({ match_date: values.matchDate, kickoff_time: values.kickoffTime, field_id: values.fieldId, referee_id: values.refereeId, assistant_referee_1_id: values.assistantReferee1Id, assistant_referee_2_id: values.assistantReferee2Id, supervisor_referee_id: values.supervisorRefereeId }).eq("id", values.matchId).is("deleted_at", null);
   if (error) throw new Error(error.message);
 }
 
@@ -271,10 +273,10 @@ export async function getMatchReport(matchId: string): Promise<MatchReport> {
   await requireUser();
   const supabase = await createClient();
   const { data: match, error: matchError } = await supabase.from("matches")
-    .select("id,home_team_registration_id,away_team_registration_id")
+    .select("id,home_team_registration_id,away_team_registration_id,referee_id,assistant_referee_1_id,assistant_referee_2_id,supervisor_referee_id")
     .eq("id", matchId).is("deleted_at", null).single();
   if (matchError) throw new Error(matchError.message);
-  const matchData = match as unknown as { id: string; home_team_registration_id: string; away_team_registration_id: string };
+  const matchData = match as unknown as { id: string; home_team_registration_id: string; away_team_registration_id: string; referee_id: string | null; assistant_referee_1_id: string | null; assistant_referee_2_id: string | null; supervisor_referee_id: string | null };
   const registrationIds = [matchData.home_team_registration_id, matchData.away_team_registration_id];
   const [registrationsResult, playersResult, eventTypesResult, eventsResult, entriesResult, confirmationsResult, controlResult] = await Promise.all([
     supabase.from("team_category_registrations").select("id,display_name,team_id").in("id", registrationIds),
@@ -282,7 +284,7 @@ export async function getMatchReport(matchId: string): Promise<MatchReport> {
     supabase.from("event_types").select("id,code,name").order("display_order"),
     supabase.from("match_events").select("id,player_registration_id,event_type_id,minute,comments").eq("match_id", matchId).order("minute"),
     supabase.from("match_sheet_entries" as never).select("player_registration_id,shirt_number,is_present,notes").eq("match_id", matchId) as unknown as Promise<{ data: { player_registration_id: string; shirt_number: number | null; is_present: boolean; notes: string | null }[] | null; error: { message: string } | null }>,
-    supabase.from("match_sheet_confirmations" as never).select("confirmation_type,confirmed_at").eq("match_id", matchId) as unknown as Promise<{ data: { confirmation_type: "REFEREE" | "HOME_DELEGATE" | "AWAY_DELEGATE"; confirmed_at: string }[] | null; error: { message: string } | null }>,
+    supabase.from("match_sheet_confirmations" as never).select("confirmation_type,confirmed_at").eq("match_id", matchId) as unknown as Promise<{ data: { confirmation_type: "REFEREE" | "SUPERVISOR" | "HOME_DELEGATE" | "AWAY_DELEGATE"; confirmed_at: string }[] | null; error: { message: string } | null }>,
     supabase.from("match_sheet_controls" as never).select("status").eq("match_id", matchId).maybeSingle() as unknown as Promise<{ data: { status: "DRAFT" | "OPEN" | "CLOSED" } | null; error: { message: string } | null }>,
   ]);
   for (const result of [registrationsResult, playersResult, eventTypesResult, eventsResult, entriesResult, confirmationsResult, controlResult]) if (result.error) throw new Error(result.error.message);
@@ -297,7 +299,11 @@ export async function getMatchReport(matchId: string): Promise<MatchReport> {
   if (teamsError) throw new Error(teamsError.message);
   const teamNames = new Map((teams ?? []).map((team) => [team.id, team.name]));
   const registrations = new Map(registrationRows.map((registration) => [registration.id, registration.display_name ?? teamNames.get(registration.team_id) ?? "Equipo"]));
-  return { id: matchData.id, homeTeamRegistrationId: matchData.home_team_registration_id, awayTeamRegistrationId: matchData.away_team_registration_id, homeTeam: registrations.get(matchData.home_team_registration_id) ?? "Local", awayTeam: registrations.get(matchData.away_team_registration_id) ?? "Visitante", players, eventTypes, events: (eventsResult.data ?? []).map((event) => ({ id: event.id, playerName: players.find((player) => player.id === event.player_registration_id)?.name ?? "Jugador", eventName: eventTypes.find((type) => type.id === event.event_type_id)?.name ?? "Evento", minute: event.minute ?? 0, comments: event.comments })), sheetEntries: (entriesResult.data ?? []).map((entry) => ({ playerRegistrationId: entry.player_registration_id, shirtNumber: entry.shirt_number, isPresent: entry.is_present, notes: entry.notes })), confirmations: (confirmationsResult.data ?? []).map((confirmation) => ({ confirmationType: confirmation.confirmation_type, confirmedAt: confirmation.confirmed_at })), sheetStatus: controlResult.data?.status ?? null };
+  const officialIds = [matchData.referee_id, matchData.assistant_referee_1_id, matchData.assistant_referee_2_id, matchData.supervisor_referee_id].filter((id): id is string => Boolean(id));
+  const { data: officials, error: officialsError } = officialIds.length ? await supabase.from("referees").select("id,first_name,last_name").in("id", officialIds) : { data: [], error: null };
+  if (officialsError) throw new Error(officialsError.message);
+  const officialNames = new Map((officials ?? []).map((official) => [official.id, `${official.first_name} ${official.last_name}`.trim()]));
+  return { id: matchData.id, homeTeamRegistrationId: matchData.home_team_registration_id, awayTeamRegistrationId: matchData.away_team_registration_id, homeTeam: registrations.get(matchData.home_team_registration_id) ?? "Local", awayTeam: registrations.get(matchData.away_team_registration_id) ?? "Visitante", officials: { referee: matchData.referee_id ? officialNames.get(matchData.referee_id) ?? null : null, assistant1: matchData.assistant_referee_1_id ? officialNames.get(matchData.assistant_referee_1_id) ?? null : null, assistant2: matchData.assistant_referee_2_id ? officialNames.get(matchData.assistant_referee_2_id) ?? null : null, supervisor: matchData.supervisor_referee_id ? officialNames.get(matchData.supervisor_referee_id) ?? null : null }, players, eventTypes, events: (eventsResult.data ?? []).map((event) => ({ id: event.id, playerName: players.find((player) => player.id === event.player_registration_id)?.name ?? "Jugador", eventName: eventTypes.find((type) => type.id === event.event_type_id)?.name ?? "Evento", minute: event.minute ?? 0, comments: event.comments })), sheetEntries: (entriesResult.data ?? []).map((entry) => ({ playerRegistrationId: entry.player_registration_id, shirtNumber: entry.shirt_number, isPresent: entry.is_present, notes: entry.notes })), confirmations: (confirmationsResult.data ?? []).map((confirmation) => ({ confirmationType: confirmation.confirmation_type, confirmedAt: confirmation.confirmed_at })), sheetStatus: controlResult.data?.status ?? null };
 }
 
 export async function setMatchSheetStatus(values: MatchSheetStatusValues) {
@@ -336,10 +342,11 @@ export async function saveMatchSheetEntry(values: MatchSheetEntryValues) {
 export async function confirmMatchSheet(values: MatchSheetConfirmationValues) {
   const user = await requireUser();
   const supabase = await createClient();
-  const { data: match, error: matchError } = await supabase.from("matches").select("home_team_registration_id,away_team_registration_id").eq("id", values.matchId).single();
+  const { data: match, error: matchError } = await supabase.from("matches").select("home_team_registration_id,away_team_registration_id,supervisor_referee_id").eq("id", values.matchId).single();
   if (matchError) throw new Error(matchError.message);
+  if (values.confirmationType === "SUPERVISOR" && !match.supervisor_referee_id) throw new Error("No hay un veedor designado para este partido.");
   const teamRegistrationId = values.confirmationType === "HOME_DELEGATE" ? match.home_team_registration_id : values.confirmationType === "AWAY_DELEGATE" ? match.away_team_registration_id : null;
-  const labels = { REFEREE: "Árbitro", HOME_DELEGATE: "Delegado local", AWAY_DELEGATE: "Delegado visitante" };
+  const labels = { REFEREE: "Árbitro", SUPERVISOR: "Veedor", HOME_DELEGATE: "Delegado local", AWAY_DELEGATE: "Delegado visitante" };
   const { error } = await (supabase.from("match_sheet_confirmations" as never).upsert({ match_id: values.matchId, team_registration_id: teamRegistrationId, confirmation_type: values.confirmationType, profile_id: user.id, declaration: `${labels[values.confirmationType]} confirma digitalmente la planilla y los datos registrados.`, confirmed_at: new Date().toISOString() }, { onConflict: "match_id,confirmation_type" }) as unknown as Promise<{ error: { message: string } | null }>);
   if (error) throw new Error(error.message);
 }

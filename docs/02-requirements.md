@@ -8,7 +8,7 @@
 | RF-004 | Programar fixture manual | Implementado |
 | RF-005 | Cargar resultados y recalcular tabla | Implementado |
 | RF-006 | Registrar goles, tarjetas y consultar sanciones | Implementado |
-| RF-007 | Administrar canchas, árbitros y asistentes | Implementado |
+| RF-007 | Administrar canchas, árbitros, asistentes y veedor | Implementado; veedor requiere migración 20260923 |
 | RF-008 | Consultar fixture y posiciones sin iniciar sesión | Implementado |
 | RF-009 | Subir planilla PDF o imagen | Pendiente |
 | RF-010 | Generar fixture automático regular por zona y programarlo después | Implementado; requiere migración 20260919 |

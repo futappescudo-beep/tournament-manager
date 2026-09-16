@@ -24,6 +24,7 @@ export const fixtureMatchSchema = z.object({
   refereeId: optionalUuid,
   assistantReferee1Id: optionalUuid,
   assistantReferee2Id: optionalUuid,
+  supervisorRefereeId: optionalUuid,
   observations: z.string().trim().max(500, "Las observaciones no pueden superar 500 caracteres.").optional(),
 }).refine((values) => values.homeTeamRegistrationId !== values.awayTeamRegistrationId, {
   message: "El equipo local y visitante deben ser distintos.",
@@ -49,6 +50,7 @@ export const fixtureScheduleSchema = z.object({
   refereeId: optionalUuid,
   assistantReferee1Id: optionalUuid,
   assistantReferee2Id: optionalUuid,
+  supervisorRefereeId: optionalUuid,
 });
 
 export type FixtureScheduleValues = z.infer<typeof fixtureScheduleSchema>;

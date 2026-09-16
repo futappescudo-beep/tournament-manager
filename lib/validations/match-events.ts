@@ -21,7 +21,7 @@ export const matchSheetEntrySchema = z.object({
 
 export const matchSheetConfirmationSchema = z.object({
   matchId: z.uuid(),
-  confirmationType: z.enum(["REFEREE", "HOME_DELEGATE", "AWAY_DELEGATE"]),
+  confirmationType: z.enum(["REFEREE", "SUPERVISOR", "HOME_DELEGATE", "AWAY_DELEGATE"]),
 });
 
 export const matchSheetStatusSchema = z.object({ matchId: z.uuid(), status: z.enum(["DRAFT", "OPEN", "CLOSED"]), closingObservations: z.string().trim().max(600).optional() });

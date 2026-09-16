@@ -1,5 +1,11 @@
 # Historial de versiones
 
+## 0.2.54 — Veedor en la designación y planilla
+
+- Cada partido permite designar un **veedor** opcional desde el padrón existente de árbitros, separado del árbitro principal y asistentes.
+- Fixture y Planilla muestran el veedor; cuando existe, la planilla abierta incorpora su constancia digital de supervisión.
+- Requiere ejecutar `20260923_match_supervisor.sql` en Supabase.
+
 ## 0.2.53 — Salida y cancelación de planilla preliminar
 
 - La planilla digital incorpora **Volver al fixture** en todas sus etapas.
