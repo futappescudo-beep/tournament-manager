@@ -1,4 +1,5 @@
 import { requireUser } from "@/lib/auth/session";
+import { getCurrentAccess } from "@/lib/auth/access";
 import { createClient } from "@/lib/supabase/server";
 import type { FixtureMatchValues, FixtureScheduleValues, RegularFixtureGeneratorValues, ResultValues } from "@/lib/validations/matches";
 import type { MatchEventValues } from "@/lib/validations/match-events";
@@ -77,6 +78,30 @@ export async function canManageFixture() {
   const supabase = await createClient();
   const { data } = await supabase.rpc("is_tournament_administrator" as never);
   return Boolean(data);
+}
+
+/** null significa acceso a toda planilla; un Set limita al delegado a sus equipos. */
+export async function getAccessibleMatchSheetIds(): Promise<Set<string> | null> {
+  const access = await getCurrentAccess();
+  if (access.role !== "PLAYER") return null;
+  const supabase = await createClient();
+  const { data: assignments, error: assignmentsError } = await (supabase.from("team_delegate_assignments" as never).select("team_id") as unknown as Promise<{ data: { team_id: string }[] | null; error: { message: string; code?: string } | null }>);
+  if (assignmentsError) {
+    if (assignmentsError.code === "42P01") return new Set();
+    throw new Error(assignmentsError.message);
+  }
+  const teamIds = (assignments ?? []).map((assignment) => assignment.team_id);
+  if (!teamIds.length) return new Set();
+  const { data: registrations, error: registrationsError } = await supabase.from("team_category_registrations").select("id").in("team_id", teamIds).is("deleted_at", null);
+  if (registrationsError) throw new Error(registrationsError.message);
+  const registrationIds = (registrations ?? []).map((registration) => registration.id);
+  if (!registrationIds.length) return new Set();
+  const [homeResult, awayResult] = await Promise.all([
+    supabase.from("matches").select("id").in("home_team_registration_id", registrationIds).is("deleted_at", null),
+    supabase.from("matches").select("id").in("away_team_registration_id", registrationIds).is("deleted_at", null),
+  ]);
+  if (homeResult.error || awayResult.error) throw new Error(homeResult.error?.message ?? awayResult.error?.message ?? "No se pudo validar el acceso a la planilla.");
+  return new Set([...(homeResult.data ?? []), ...(awayResult.data ?? [])].map((match) => match.id));
 }
 
 export async function getFixture(): Promise<FixtureMatch[]> {

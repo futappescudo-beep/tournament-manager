@@ -6,7 +6,7 @@
 
 ## Alcance entregado
 
-* Autenticación Supabase, recuperación de contraseña y roles.
+* Autenticación Supabase, recuperación de contraseña y roles; navegación de consulta para Jugador y acceso operacional de Árbitro desde Planilla.
 * Catálogo de torneos, categorías y zonas A–E; cupos, canchas y árbitros.
 * Equipos, baja lógica, logos, inscripciones y lista de buena fe por categoría/zona.
 * Jugadores con DNI, fecha de nacimiento, foto y asignación al mismo equipo en distintas zonas.

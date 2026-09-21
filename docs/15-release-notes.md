@@ -1,5 +1,12 @@
 # Historial de versiones
 
+## 0.2.56 — Navegación de consulta por rol
+
+- **Jugador** ve solamente Principal, Fixture, Resultados, Posiciones, Goleadores, Sanciones y Reglamento; esas páginas quedan en modo consulta con filtros.
+- **Árbitro** ve el mismo menú y suma Pagos; la carga operativa continúa únicamente desde la planilla abierta.
+- Fixture oculta el acceso a Planilla y eventos para un Jugador no delegado; el delegado asignado ve sólo los partidos de su equipo.
+- Requiere ejecutar `20260925_member_read_only_navigation.sql` en Supabase.
+
 ## 0.2.55 — Delegado único por equipo
 
 - Configuración permite al **SUPER_ADMIN** asignar, reemplazar o quitar un delegado por equipo.

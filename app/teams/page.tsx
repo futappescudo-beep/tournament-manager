@@ -4,9 +4,11 @@ import { getTeams } from "@/lib/service/team.service";
 import { getCategoriesWithZones } from "@/lib/service/catalog.service";
 import { requireUser } from "@/lib/auth/session";
 import { AppShell } from "@/components/layout/AppShell";
+import { requireRoleAccess } from "@/lib/auth/access";
 
 export default async function TeamsPage() {
   await requireUser();
+  await requireRoleAccess(["SUPER_ADMIN", "TOURNAMENT_ADMIN", "TEAM_MANAGER"]);
   const [teams, categories] = await Promise.all([
     getTeams(),
     getCategoriesWithZones(),
