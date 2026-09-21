@@ -11,7 +11,7 @@ Aplicación web responsive para administrar torneos de fútbol amateur. Incluye 
 ## Capacidades actuales
 
 - Torneos activos con categorías, zonas, cupos, canchas y árbitros.
-- Equipos, jugadores, logos/fotos e inscripciones por categoría y zona.
+- Equipos, jugadores, logos/fotos e inscripciones por categoría y zona; alta completa desde Jugadores o desde el plantel, y asignación separada de jugadores ya existentes.
 - Fixture manual y generación automática de una rueda regular por zona; programación posterior de día, horario, cancha y terna arbitral.
 - Play Off flexible de Oro, Plata u otra copa, con llaves y avance de ganadores.
 - Resultados, eventos, sanciones, goleadores, dashboard y posiciones.
@@ -26,6 +26,6 @@ Aplicación web responsive para administrar torneos de fútbol amateur. Incluye 
 
 ## Migraciones de Supabase
 
-Ejecutar los archivos de `database/migrations` en orden cronológico, hasta `20260922_cancel_draft_match_sheet.sql`. Las migraciones son parte del release: desplegar solo el código sin aplicar la migración correspondiente puede dejar una acción visible sin permiso en la base.
+Ejecutar los archivos de `database/migrations` en orden cronológico, hasta `20260926_player_registration_permissions.sql`. Las migraciones son parte del release: desplegar solo el código sin aplicar la migración correspondiente puede dejar una acción visible sin permiso en la base.
 
 La documentación funcional y el plan de continuidad están en [`docs/00-current-status.md`](docs/00-current-status.md) y [`docs/16-scope-audit-20260915.md`](docs/16-scope-audit-20260915.md).

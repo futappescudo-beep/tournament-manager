@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { Pencil, Plus, Search, Trash2, UsersRound } from "lucide-react";
 import { toast } from "sonner";
 import type { Player, PlayerAssignment, TeamRegistrationOption } from "@/lib/types/player";
-import { assignPlayerToTeam, createPlayer, deletePlayer, updatePlayer } from "@/lib/actions/players";
+import { createPlayerWithInitialAssignment, deletePlayer, safelyAssignPlayerToTeam, updatePlayer } from "@/lib/actions/players";
 import type { PlayerAssignmentValues, PlayerCreateValues } from "@/lib/validations/players";
 import { PlayerDialog } from "./players-dialog";
 import { PlayerAssignmentDialog } from "./player-assignment-dialog";
@@ -28,15 +28,16 @@ export function PlayersClient({ players: initialPlayers, teamRegistrations }: { 
     setLoading(true);
     try {
       if (selected) {
-        const { team_registration_id, shirt_number, is_captain, is_goalkeeper, ...playerValues } = values;
+        const playerValues = { document_type: values.document_type, document_number: values.document_number, first_name: values.first_name, last_name: values.last_name, birth_date: values.birth_date, photo_url: values.photo_url };
         await updatePlayer(selected.id, playerValues);
-        setPlayers((current) => current.map((player) => player.id === selected.id ? { ...player, ...playerValues, birth_date: playerValues.birth_date || null } : player));
+        setPlayers((current) => current.map((player) => player.id === selected.id ? { ...player, ...playerValues, birth_date: playerValues.birth_date || null, photo_url: playerValues.photo_url || null } : player));
       } else {
-        const { team_registration_id, shirt_number, is_captain, is_goalkeeper, ...playerValues } = values;
-        const created = await createPlayer(playerValues);
+        const result = await createPlayerWithInitialAssignment(values);
+        if (!result.ok) throw new Error(result.message);
+        const created = result.data;
+        const { team_registration_id, shirt_number, is_captain, is_goalkeeper } = values;
         const assignments: PlayerAssignment[] = [];
         if (team_registration_id) {
-          await assignPlayerToTeam({ player_id: created.id, team_registration_id, shirt_number, is_captain, is_goalkeeper });
           const label = teamRegistrations.find((item) => item.id === team_registration_id)?.label ?? "Equipo asignado";
           assignments.push({ id: "new", team_registration_id, shirt_number, is_captain, is_goalkeeper, label });
         }
@@ -50,7 +51,8 @@ export function PlayersClient({ players: initialPlayers, teamRegistrations }: { 
   async function saveAssignment(values: PlayerAssignmentValues) {
     setLoading(true);
     try {
-      await assignPlayerToTeam(values);
+      const result = await safelyAssignPlayerToTeam(values);
+      if (!result.ok) throw new Error(result.message);
       const label = teamRegistrations.find((item) => item.id === values.team_registration_id)?.label ?? "Equipo asignado";
       setPlayers((current) => current.map((player) => player.id === values.player_id ? { ...player, assignments: [...player.assignments.filter((assignment) => assignment.team_registration_id !== values.team_registration_id), { id: "new", team_registration_id: values.team_registration_id, shirt_number: values.shirt_number, is_captain: values.is_captain, is_goalkeeper: values.is_goalkeeper, label }] } : player));
       setAssignmentOpen(false);
