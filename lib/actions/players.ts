@@ -18,6 +18,7 @@ export async function createPlayer(values: PlayerFormValues) { const player = aw
 export async function updatePlayer(id: string, values: PlayerFormValues) { await PlayerService.updatePlayer(id, playerSchema.parse(values)); revalidatePath("/players"); }
 export async function assignPlayerToTeam(values: PlayerAssignmentValues) { await PlayerService.assignPlayerToTeam(playerAssignmentSchema.parse(values)); revalidatePath("/players"); }
 export async function deletePlayer(id: string) { await PlayerService.deletePlayer(playerIdSchema.parse(id)); revalidatePath("/players"); }
+export async function unassignPlayerFromTeam(playerRegistrationId: string) { await PlayerService.unassignPlayerFromTeam(playerIdSchema.parse(playerRegistrationId)); revalidatePath("/players"); revalidatePath("/teams"); }
 
 export async function createPlayerWithInitialAssignment(values: PlayerCreateValues): Promise<PlayerActionResult<Awaited<ReturnType<typeof PlayerService.createPlayer>>>> {
   try {

@@ -16,6 +16,8 @@ export const matchSheetEntrySchema = z.object({
   teamRegistrationId: z.uuid(),
   shirtNumber: z.coerce.number().int().min(0).max(99).nullable(),
   isPresent: z.boolean(),
+  isCaptain: z.boolean().default(false),
+  isGoalkeeper: z.boolean().default(false),
   notes: z.string().trim().max(240).optional(),
 });
 

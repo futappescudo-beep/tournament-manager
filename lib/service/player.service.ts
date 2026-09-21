@@ -78,7 +78,13 @@ export async function deletePlayer(id: string) {
   const now = new Date().toISOString();
   const { error: registrationsError } = await supabase.from("player_team_registrations").update({ left_at: now.slice(0, 10), deleted_at: now }).eq("player_id", id).is("deleted_at", null);
   if (registrationsError) throw new Error(registrationsError.message);
-  const { error } = await supabase.from("players").update({ deleted_at: now }).eq("id", id).is("deleted_at", null);
+}
+
+export async function unassignPlayerFromTeam(playerRegistrationId: string) {
+  await requireUser();
+  const supabase = await createClient();
+  const now = new Date().toISOString();
+  const { error } = await supabase.from("player_team_registrations").update({ left_at: now.slice(0, 10), deleted_at: now }).eq("id", playerRegistrationId).is("deleted_at", null);
   if (error) throw new Error(error.message);
 }
 
@@ -109,6 +115,14 @@ export async function assignPlayerToTeam(values: PlayerAssignmentValues) {
   const payload = { shirt_number: values.shirt_number, is_captain: values.is_captain, is_goalkeeper: values.is_goalkeeper };
   if (existing) {
     const { error } = await supabase.from("player_team_registrations").update(payload).eq("id", existing.id);
+    if (error) throw new Error(error.message);
+    return;
+  }
+  const { data: previousAssignments, error: previousError } = await supabase.from("player_team_registrations").select("id").eq("player_id", values.player_id).eq("team_registration_id", values.team_registration_id).order("joined_at", { ascending: false }).limit(1);
+  if (previousError) throw new Error(previousError.message);
+  const previous = previousAssignments?.[0];
+  if (previous) {
+    const { error } = await supabase.from("player_team_registrations").update({ ...payload, joined_at: new Date().toISOString().slice(0, 10), left_at: null, deleted_at: null }).eq("id", previous.id);
     if (error) throw new Error(error.message);
     return;
   }
