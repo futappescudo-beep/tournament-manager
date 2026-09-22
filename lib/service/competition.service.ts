@@ -138,22 +138,9 @@ export async function getFixture(): Promise<FixtureMatch[]> {
 
 export async function getPublicFixture(): Promise<FixtureMatch[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase.from("vw_fixture").select("id,round,match_date,kickoff_time,home_team,away_team,field,referee,supervisor,home_score,away_score").order("match_date").order("kickoff_time");
+  const { data, error } = await supabase.from("vw_guest_fixture" as never).select("id,round,match_date,kickoff_time,home_team,away_team,field,referee,supervisor,home_score,away_score").order("match_date").order("kickoff_time");
   if (error) throw new Error(error.message);
-  const matches = (data ?? []) as FixtureMatch[];
-  if (!matches.length) return [];
-  const { data: schedules, error: schedulesError } = await supabase.from("matches").select("id,matchday_id").in("id", matches.map((match) => match.id));
-  if (schedulesError) throw new Error(schedulesError.message);
-  const matchdayIds = [...new Set((schedules ?? []).map((match) => match.matchday_id))];
-  const { data: matchdays, error: matchdaysError } = await supabase.from("matchdays").select("id,tournament_id").in("id", matchdayIds);
-  if (matchdaysError) throw new Error(matchdaysError.message);
-  const tournamentIds = [...new Set((matchdays ?? []).map((matchday) => matchday.tournament_id))];
-  const { data: activeTournaments, error: tournamentsError } = await supabase.from("tournaments").select("id").in("id", tournamentIds).is("deleted_at", null).is("archived_at", null);
-  if (tournamentsError) throw new Error(tournamentsError.message);
-  const activeTournamentIds = new Set((activeTournaments ?? []).map((tournament) => tournament.id));
-  const matchdaysById = new Map((matchdays ?? []).map((matchday) => [matchday.id, matchday.tournament_id]));
-  const matchTournamentIds = new Map((schedules ?? []).map((match) => [match.id, matchdaysById.get(match.matchday_id)]));
-  return matches.filter((match) => activeTournamentIds.has(matchTournamentIds.get(match.id) ?? ""));
+  return (data ?? []) as FixtureMatch[];
 }
 
 export async function updateMatchResult({ matchId, homeScore, awayScore }: ResultValues) {
@@ -413,12 +400,26 @@ export async function getTopScorers(): Promise<{ id: string; first_name: string 
   return data ?? [];
 }
 
+export async function getPublicTopScorers(): Promise<{ id: string; first_name: string | null; last_name: string | null; goals: number | null }[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("vw_guest_scorers" as never).select("id,first_name,last_name,goals").order("goals", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as { id: string; first_name: string | null; last_name: string | null; goals: number | null }[];
+}
+
 export async function getSuspensions(): Promise<{ first_name: string | null; last_name: string | null; yellow_cards: number | null; red_cards: number | null; automatic_suspensions: number | null; manual_suspensions: number | null; }[]> {
   await requireUser();
   const supabase = await createClient();
   const { data, error } = await supabase.from("vw_player_suspensions").select("first_name,last_name,yellow_cards,red_cards,automatic_suspensions,manual_suspensions");
   if (error) throw new Error(error.message);
   return data ?? [];
+}
+
+export async function getPublicSuspensions(): Promise<{ first_name: string | null; last_name: string | null; yellow_cards: number | null; red_cards: number | null; automatic_suspensions: number | null; manual_suspensions: number | null; }[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("vw_guest_suspensions" as never).select("first_name,last_name,yellow_cards,red_cards,automatic_suspensions,manual_suspensions");
+  if (error) throw new Error(error.message);
+  return (data ?? []) as { first_name: string | null; last_name: string | null; yellow_cards: number | null; red_cards: number | null; automatic_suspensions: number | null; manual_suspensions: number | null; }[];
 }
 
 export async function getStandings(): Promise<Standing[]> {
@@ -431,7 +432,7 @@ export async function getStandings(): Promise<Standing[]> {
 
 export async function getPublicStandings(): Promise<Standing[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase.from("vw_standings").select("team_registration_id,display_name,competition_phase_id,competition_group_id,played,won,drawn,lost,goals_for,goals_against");
+  const { data, error } = await supabase.from("vw_guest_standings" as never).select("team_registration_id,display_name,competition_phase_id,competition_group_id,played,won,drawn,lost,goals_for,goals_against");
   if (error) throw new Error(error.message);
   return ((data ?? []) as Standing[]).sort((a, b) => points(b) - points(a) || goalDifference(b) - goalDifference(a) || (b.goals_for ?? 0) - (a.goals_for ?? 0));
 }
