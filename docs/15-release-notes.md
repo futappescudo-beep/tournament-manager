@@ -1,5 +1,12 @@
 # Historial de versiones
 
+## 0.2.58 — Consulta pública con filtros
+
+- Invitado ingresa sin sesión por `/public` y cuenta con navegación de solo lectura equivalente a Jugador.
+- La consulta pública muestra Principal, Fixture, Resultados, Posiciones, Goleadores, Sanciones y Reglamento.
+- Se incorporan filtros públicos Torneo → Categoría → Zona y vistas de base que exponen únicamente torneos activos.
+- Requiere ejecutar `20260928_guest_read_only_access.sql` y `20260929_guest_competition_filters.sql` en Supabase.
+
 ## 0.2.56 — Navegación de consulta por rol
 
 - **Jugador** ve solamente Principal, Fixture, Resultados, Posiciones, Goleadores, Sanciones y Reglamento; esas páginas quedan en modo consulta con filtros.

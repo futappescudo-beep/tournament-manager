@@ -1,23 +1,22 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { DashboardCatalog, DashboardFilter } from "@/lib/service/dashboard.service";
 
 type Props = { catalog: DashboardCatalog; filter: DashboardFilter; path?: string; idPrefix?: string };
 
-export function DashboardFilters({ catalog, filter, path = "/dashboard", idPrefix = "dashboard" }: Props) {
+export function DashboardFilters(props: Props) {
+  const key = `${props.path ?? "/dashboard"}:${props.filter.tournamentId ?? ""}:${props.filter.categoryId ?? ""}:${props.filter.zoneId ?? ""}`;
+  return <DashboardFiltersForm key={key} {...props} />;
+}
+
+function DashboardFiltersForm({ catalog, filter, path = "/dashboard", idPrefix = "dashboard" }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [tournamentId, setTournamentId] = useState(filter.tournamentId ?? "");
   const [categoryId, setCategoryId] = useState(filter.categoryId ?? "");
   const [zoneId, setZoneId] = useState(filter.zoneId ?? "");
-
-  useEffect(() => {
-    setTournamentId(filter.tournamentId ?? "");
-    setCategoryId(filter.categoryId ?? "");
-    setZoneId(filter.zoneId ?? "");
-  }, [filter.tournamentId, filter.categoryId, filter.zoneId]);
 
   const categories = useMemo(
     () => catalog.categories.filter((category) => category.tournament_id === tournamentId),

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import Image from "next/image";
 import { ImageUp } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
@@ -24,5 +25,5 @@ export function LogoUpload({ value, onChange }: { value: string; onChange: (url:
     } catch (error) { toast.error(error instanceof Error ? error.message : "No se pudo cargar el escudo."); }
     finally { setUploading(false); if (inputRef.current) inputRef.current.value = ""; }
   }
-  return <div className="flex items-center gap-3"><div className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-md border border-[var(--ea-border)] bg-black/20">{value ? <img src={value} alt="Vista previa del escudo" className="h-full w-full object-contain p-1" /> : <ImageUp className="h-5 w-5 text-stone-500" />}</div><div><input ref={inputRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={(event) => upload(event.target.files?.[0])} /><button type="button" disabled={uploading} onClick={() => inputRef.current?.click()} className="rounded-md border border-[var(--ea-gold)]/60 px-3 py-2 text-sm font-semibold text-[var(--ea-gold)] disabled:opacity-50">{uploading ? "Cargando..." : "Subir escudo"}</button><p className="mt-1 text-xs text-stone-500">JPG, PNG o WebP · hasta 2 MB</p></div></div>;
+  return <div className="flex items-center gap-3"><div className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-md border border-[var(--ea-border)] bg-black/20">{value ? <Image src={value} alt="Vista previa del escudo" width={56} height={56} unoptimized className="h-full w-full object-contain p-1" /> : <ImageUp className="h-5 w-5 text-stone-500" />}</div><div><input ref={inputRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={(event) => upload(event.target.files?.[0])} /><button type="button" disabled={uploading} onClick={() => inputRef.current?.click()} className="rounded-md border border-[var(--ea-gold)]/60 px-3 py-2 text-sm font-semibold text-[var(--ea-gold)] disabled:opacity-50">{uploading ? "Cargando..." : "Subir escudo"}</button><p className="mt-1 text-xs text-stone-500">JPG, PNG o WebP · hasta 2 MB</p></div></div>;
 }

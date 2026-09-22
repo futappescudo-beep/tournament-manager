@@ -13,5 +13,5 @@ Las políticas permiten acceder al panel a `SUPER_ADMIN`, `TOURNAMENT_ADMIN`, `T
 Limitaciones conocidas:
 
 * `TEAM_MANAGER` todavía puede administrar datos amplios de equipos y planteles por la política `can_manage_tournament()`.
-* `REFEREE` no está vinculado de forma verificable al árbitro asignado en un partido; su capacidad de planilla debe limitarse a esa asignación.
+* La cuenta `REFEREE` es compartida por decisión operativa. La identidad del árbitro o veedor físico debe quedar registrada en la designación del partido y verificarse en la prueba de aceptación.
 * La interfaz no debe considerarse una barrera de seguridad: la restricción debe residir en RLS y en las acciones de servidor.

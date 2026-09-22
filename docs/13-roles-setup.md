@@ -8,7 +8,7 @@ Roles disponibles despues de aplicar la migracion:
 
 - `SUPER_ADMIN`: acceso total y asignacion de roles.
 - `TOURNAMENT_ADMIN`: administra el torneo.
-- `REFEREE`: rol previsto para operar la planilla de partidos asignados; la restricción exclusiva por asignación aún está pendiente.
+- `REFEREE`: cuenta operativa compartida para trabajar planillas abiertas. La designación del oficial se registra por partido; la cuenta no identifica por sí misma al árbitro físico.
 - `TEAM_MANAGER`: delegado de equipo; la restricción a equipos propios aún está pendiente.
 - `PLAYER`: rol minimo para todo usuario nuevo.
 

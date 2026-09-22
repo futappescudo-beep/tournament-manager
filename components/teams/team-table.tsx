@@ -55,6 +55,8 @@ export function TeamTable({
   [onEdit, onDelete]
 );
 
+  // TanStack Table expone una API imperativa estable para esta tabla local.
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data,
     columns,

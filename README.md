@@ -26,7 +26,7 @@ Aplicación web responsive para administrar torneos de fútbol amateur. Incluye 
 
 ## Migraciones de Supabase
 
-Ejecutar los archivos de `database/migrations` en orden cronológico, hasta `20260927_match_sheet_player_roles.sql`. Las migraciones son parte del release: desplegar solo el código sin aplicar la migración correspondiente puede dejar una acción visible sin permiso en la base.
+Ejecutar los archivos de `database/migrations` en orden cronológico, hasta `20260929_guest_competition_filters.sql`. Las migraciones son parte del release: desplegar solo el código sin aplicar la migración correspondiente puede dejar una acción visible sin permiso en la base.
 
 Para reiniciar datos de prueba antes de producción sin perder el padrón de jugadores, usar una única vez [`database/admin/reset_competition_keep_player_registry.sql`](database/admin/reset_competition_keep_player_registry.sql). No borra usuarios, roles, árbitros, canchas ni jugadores: deja las fichas sin equipo activo para volver a asignarlas.
 

@@ -12,12 +12,12 @@
 
 ## REFEREE
 
-* Alcance deseado: opera la planilla abierta y carga datos solo de partidos que tiene asignados.
-* Estado actual: puede confirmar y actualizar presentismo de una planilla abierta según RLS; la asignación exclusiva por partido y el registro integral de resultado/eventos no están cerrados.
+* Alcance operativo acordado: una cuenta arbitral compartida opera las planillas abiertas y confirma como árbitro o veedor según la designación registrada en el partido.
+* Estado actual: puede confirmar y actualizar presentismo de una planilla abierta. La cuenta compartida no identifica por sí sola al oficial físico; la designación en el partido y la matriz de aceptación son el control operativo pendiente.
 
 ## PLAYER y Público
 
 * `PLAYER` es el rol inicial de una cuenta autenticada.
-* Público usa `/public` y solo consulta fixture y posiciones.
+* Público usa `/public` sin sesión y consulta Principal, Fixture, Resultados, Posiciones, Goleadores, Sanciones y Reglamento, con filtros Torneo → Categoría → Zona.
 
 La restricción granular por equipo o por partido asignado no está cerrada. Ver `14-rls-backoffice.md`.

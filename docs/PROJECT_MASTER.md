@@ -2,7 +2,7 @@
 
 ## Proyecto y fuente de verdad
 
-**Tournament Manager** administra torneos de fútbol amateur. El estado verificable al 15/09/2026 está en [00-current-status.md](00-current-status.md); el contraste funcional completo está en [16-scope-audit-20260915.md](16-scope-audit-20260915.md).
+**Tournament Manager** administra torneos de fútbol amateur. El estado verificable al 21/09/2026 está en [00-current-status.md](00-current-status.md); el contraste funcional completo está en [16-scope-audit-20260915.md](16-scope-audit-20260915.md).
 
 ## Alcance entregado
 
@@ -14,7 +14,7 @@
 * Fase regular y Play Off separados, con cuadro flexible de Copa de Oro, Plata o personalizado, avance de ganadores y final neutral configurable.
 * Planilla digital móvil: preliminar, abierta y cerrada; convocatoria precargada, presentismo, eventos, confirmaciones digitales y cancelación de preliminar. El superadministrador designa un delegado Jugador único por equipo para confirmar sólo sus propios partidos.
 * Resultados, eventos, goleadores, sanciones, tabla y dashboard filtrable; equipos con cero partidos visibles en su zona.
-* Consulta pública global de fixture y posiciones; ciclo de torneo con eliminación lógica y archivo.
+* Consulta pública sin sesión, con navegación de lectura y filtros Torneo → Categoría → Zona; ciclo de torneo con eliminación lógica y archivo.
 
 ## Pendiente de producto
 

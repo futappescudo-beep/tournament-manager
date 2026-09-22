@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,12 +22,12 @@ const emptyValues: TeamFormValues = {
 };
 
 export default function TeamForm({ team, categories, loading = false, onSubmit }: Props) {
-  const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<TeamFormValues>({
+  const { register, handleSubmit, setValue, control, reset, formState: { errors } } = useForm<TeamFormValues>({
     resolver: zodResolver(teamSchema),
     defaultValues: emptyValues,
   });
-  const registrations = watch("registrations") ?? [];
-  const logoUrl = watch("logo_url") ?? "";
+  const registrations = useWatch({ control, name: "registrations" }) ?? [];
+  const logoUrl = useWatch({ control, name: "logo_url" }) ?? "";
 
   useEffect(() => {
     if (!team) {

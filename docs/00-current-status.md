@@ -1,15 +1,15 @@
-# Estado actual — 2026-09-15
+# Estado actual — 2026-09-21
 
-Versión de documentación: **0.2.56**. La aplicación está en una etapa funcional de operación asistida: el núcleo del torneo está implementado, mientras que automatizaciones y algunos módulos administrativos siguen pendientes.
+Versión de documentación: **0.2.58**. La aplicación está en una etapa funcional de operación asistida: el núcleo del torneo está implementado, mientras que automatizaciones y algunos módulos administrativos siguen pendientes.
 
 | Área | Estado | Alcance actual |
 | --- | --- | --- |
-| Acceso y roles | Implementado con brechas | Auth, recuperación de clave, roles y administración de usuarios. La navegación se limita por rol: Jugador consulta Principal, Fixture, Resultados, Posiciones, Goleadores, Sanciones y Reglamento; Árbitro suma Pagos. El superadministrador puede designar un delegado por equipo. Falta vincular la cuenta arbitral compartida a una designación por partido. |
+| Acceso y roles | Implementado con validación pendiente | Auth, recuperación de clave, roles y administración de usuarios. Jugador consulta Principal, Fixture, Resultados, Posiciones, Goleadores, Sanciones y Reglamento; Árbitro suma Pagos. El superadministrador designa un delegado único por equipo. La cuenta arbitral es compartida por decisión operativa y debe probarse en planillas abiertas. |
 | Catálogos | Implementado | Torneos, categorías, zonas A–E, cupos, canchas y árbitros. |
 | Equipos y planteles | Implementado | Alta, baja lógica, inscripciones, foto y jugadores por categoría/zona. Los torneos archivados solo permanecen como historial: no se ofrecen para nuevas inscripciones. |
 | Fixture | Implementado manual | Partido por torneo, categoría, zona, fecha, cancha, terna arbitral y veedor opcional. Los encuentros de torneos archivados o eliminados no se muestran en vistas activas. |
 | Resultados y estadísticas | Implementado | Marcadores, eventos, goleadores, sanciones y posiciones. La tabla incluye equipos inscriptos con estadísticas en cero antes de disputar partidos. |
-| Dashboard / posiciones / público | Implementado | Dashboard con filtros encadenados y pestañas Próximos / Hoy / Anteriores. Posiciones exige Torneo → Categoría → Zona y muestra equipos aun sin partidos. La consulta pública es global y de solo lectura. |
+| Dashboard / posiciones / público | Implementado | Dashboard con filtros encadenados y pestañas Próximos / Hoy / Anteriores. Posiciones exige Torneo → Categoría → Zona y muestra equipos aun sin partidos. Invitado usa `/public`, navega en modo lectura y filtra Torneo → Categoría → Zona. |
 | Pagos | Parcial | Solo consulta de pagos existentes; no hay ABM. |
 | Planilla digital | Implementado, requiere migraciones | Preliminar → Abierta → Cerrada, planteles precargados, presentismo, eventos y confirmaciones de árbitro, veedor y delegados. Una preliminar puede cancelarse antes de abrirse; el cierre bloquea resultados hasta reapertura administrativa. |
 | Playoffs flexibles | Implementado, requiere migración | El administrador crea cuadros de Oro, Plata o personalizados con instancias predefinidas: Octavos, Cuartos, Semifinal y Final. Admite pases directos por procedencia y final neutral. |
@@ -19,11 +19,11 @@ Versión de documentación: **0.2.56**. La aplicación está en una etapa funcio
 | Fixture automático interzonal / playoffs | Pendiente | Los interzonales y la programación de partidos desde un cruce de playoff se incorporarán en etapas posteriores. |
 | Ciclo de torneo | Implementado, requiere migración | Eliminar un torneo oculta sus fechas y partidos; cerrar y archivar conserva el historial y bloquea cambios de fixture. |
 | Historial, títulos y ranking | Pendiente | Los datos de un torneo archivado se conservan, pero aún no hay pantalla administrativa de consulta histórica, registro de campeones ni ranking de títulos. |
-| Permisos granulares | Parcial | Jugador usa la aplicación en modo consulta y filtros; Árbitro no carga resultados directamente. Delegado único por equipo con RLS de lectura/confirmación de sus partidos. La cuenta `REFEREE` compartida mantiene alcance sobre planillas abiertas; aún no hay restricción individual por designación. |
+| Permisos granulares | Parcial | Jugador usa la aplicación en modo consulta y filtros; Árbitro no carga resultados directamente. Delegado único por equipo con RLS de lectura/confirmación de sus partidos. La cuenta `REFEREE` compartida mantiene alcance sobre planillas abiertas por decisión operativa; falta completar la matriz de aceptación y trazabilidad del oficial físico. |
 | PWA, notificaciones, multi-organización | Pendiente | No hay manifest, service worker, instalación, notificaciones push ni aislamiento por organización. |
 
 ## Dependencias operativas
 
-La base debe incluir las migraciones de `database/migrations` en orden. Para la versión actual son imprescindibles las migraciones `20260908` a `20260925`, en especial las vistas de fixture/posiciones, el estado `PLAYED`, `20260916_digital_match_sheet.sql`, `20260917_closed_sheet_result_lock.sql`, `20260918_flexible_playoff_brackets.sql`, `20260919_unscheduled_fixture_matches.sql`, `20260920_fixture_visibility_and_tournament_lifecycle.sql`, `20260921_playoff_progression.sql`, `20260922_cancel_draft_match_sheet.sql`, `20260923_match_supervisor.sql`, `20260924_team_delegates.sql` y `20260925_member_read_only_navigation.sql`. Los cuadros creados antes de ejecutar la última migración se publican con el botón **Publicar cruces**.
+La base debe incluir las migraciones de `database/migrations` en orden hasta `20260929_guest_competition_filters.sql`. En particular son indispensables las planillas, el bloqueo de resultado cerrado, Play Off, ciclo de vida de torneo, delegados, permisos de jugadores, roles por planilla y vistas públicas de invitado. Los cuadros creados antes de las migraciones de Play Off se publican con el botón **Publicar cruces**.
 
 El repositorio `main` es la fuente de despliegue de Vercel. Antes de una prueba funcional, confirmar que Vercel haya publicado el commit más reciente y ejecutar las migraciones pendientes en el mismo proyecto de Supabase.
