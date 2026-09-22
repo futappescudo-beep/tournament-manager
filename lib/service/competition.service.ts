@@ -7,7 +7,8 @@ import type { MatchSheetConfirmationValues, MatchSheetEntryValues, MatchSheetSta
 import { advancePlayoffWinner } from "@/lib/service/playoffs.service";
 
 export type FixtureMatch = { id: string; round: number | null; match_date: string | null; kickoff_time: string | null; home_team: string | null; away_team: string | null; field: string | null; referee: string | null; supervisor: string | null; home_score: number | null; away_score: number | null; tournamentId?: string | null; categoryId?: string | null; zoneId?: string | null; phaseId?: string | null; phaseName?: string | null; fieldId?: string | null; refereeId?: string | null; assistantReferee1Id?: string | null; assistantReferee2Id?: string | null; supervisorRefereeId?: string | null; sheetStatus?: "DRAFT" | "OPEN" | "CLOSED" | null; };
-export type Standing = { team_registration_id: string | null; display_name: string | null; competition_phase_id: string | null; competition_group_id: string | null; played: number | null; won: number | null; drawn: number | null; lost: number | null; goals_for: number | null; goals_against: number | null; };
+export type Standing = { team_registration_id: string | null; display_name: string | null; competition_phase_id: string | null; competition_group_id: string | null; played: number | null; won: number | null; drawn: number | null; lost: number | null; goals_for: number | null; goals_against: number | null; tournamentId?: string | null; categoryId?: string | null; zoneId?: string | null; };
+export type PublicCompetitionCatalog = { tournaments: { id: string; name: string }[]; categories: { id: string; tournamentId: string; name: string }[]; zones: { id: string; categoryId: string; name: string }[]; };
 export type FixtureSetup = {
   tournaments: { id: string; name: string }[];
   categories: { id: string; tournamentId: string; name: string }[];
@@ -138,9 +139,21 @@ export async function getFixture(): Promise<FixtureMatch[]> {
 
 export async function getPublicFixture(): Promise<FixtureMatch[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase.from("vw_guest_fixture" as never).select("id,round,match_date,kickoff_time,home_team,away_team,field,referee,supervisor,home_score,away_score").order("match_date").order("kickoff_time");
+  const { data, error } = await supabase.from("vw_guest_fixture" as never).select("id,round,match_date,kickoff_time,home_team,away_team,field,referee,supervisor,home_score,away_score,tournament_id,category_id,zone_id").order("match_date").order("kickoff_time");
   if (error) throw new Error(error.message);
-  return (data ?? []) as FixtureMatch[];
+  return ((data ?? []) as (FixtureMatch & { tournament_id: string | null; category_id: string | null; zone_id: string | null })[]).map((match) => ({ ...match, tournamentId: match.tournament_id, categoryId: match.category_id, zoneId: match.zone_id }));
+}
+
+export async function getPublicCompetitionCatalog(): Promise<PublicCompetitionCatalog> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("vw_guest_competition_filters" as never).select("tournament_id,tournament_name,category_id,category_name,zone_id,zone_name").order("tournament_name").order("category_name").order("zone_name");
+  if (error) throw new Error(error.message);
+  const rows = (data ?? []) as { tournament_id: string; tournament_name: string; category_id: string; category_name: string; zone_id: string; zone_name: string }[];
+  return {
+    tournaments: [...new Map(rows.map((row) => [row.tournament_id, { id: row.tournament_id, name: row.tournament_name }])).values()],
+    categories: [...new Map(rows.map((row) => [row.category_id, { id: row.category_id, tournamentId: row.tournament_id, name: row.category_name }])).values()],
+    zones: rows.map((row) => ({ id: row.zone_id, categoryId: row.category_id, name: row.zone_name })),
+  };
 }
 
 export async function updateMatchResult({ matchId, homeScore, awayScore }: ResultValues) {
@@ -432,9 +445,9 @@ export async function getStandings(): Promise<Standing[]> {
 
 export async function getPublicStandings(): Promise<Standing[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase.from("vw_guest_standings" as never).select("team_registration_id,display_name,competition_phase_id,competition_group_id,played,won,drawn,lost,goals_for,goals_against");
+  const { data, error } = await supabase.from("vw_guest_standings" as never).select("team_registration_id,display_name,competition_phase_id,competition_group_id,played,won,drawn,lost,goals_for,goals_against,tournament_id,category_id,zone_id");
   if (error) throw new Error(error.message);
-  return ((data ?? []) as Standing[]).sort((a, b) => points(b) - points(a) || goalDifference(b) - goalDifference(a) || (b.goals_for ?? 0) - (a.goals_for ?? 0));
+  return ((data ?? []) as (Standing & { tournament_id: string | null; category_id: string | null; zone_id: string | null })[]).map((standing) => ({ ...standing, tournamentId: standing.tournament_id, categoryId: standing.category_id, zoneId: standing.zone_id })).sort((a, b) => points(b) - points(a) || goalDifference(b) - goalDifference(a) || (b.goals_for ?? 0) - (a.goals_for ?? 0));
 }
 
 export const points = (standing: Standing) => (standing.won ?? 0) * 3 + (standing.drawn ?? 0);
