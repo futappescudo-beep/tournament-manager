@@ -15,7 +15,7 @@ Aplicación web responsive para administrar torneos de fútbol amateur. Incluye 
 - Fixture manual y generación automática de una rueda regular por zona; programación posterior de día, horario, cancha y terna arbitral.
 - Play Off flexible de Oro, Plata u otra copa, con llaves y avance de ganadores.
 - Resultados, eventos, sanciones, goleadores, dashboard y posiciones.
-- Planilla digital con estados preliminar, abierta y cerrada; presentismo, número de camiseta, capitán/arquero por partido y confirmaciones digitales.
+- Planilla digital con estados preliminar, abierta, partido finalizado y cerrada; búsqueda por DNI/nombre, presentismo, número de camiseta, titular/capitán/arquero por partido, eventos corregibles y confirmaciones digitales secuenciales.
 - Archivo de torneo que lo excluye de la operación activa sin borrar sus datos.
 
 ## Pendientes principales
@@ -26,8 +26,10 @@ Aplicación web responsive para administrar torneos de fútbol amateur. Incluye 
 
 ## Migraciones de Supabase
 
-Ejecutar los archivos de `database/migrations` en orden cronológico, hasta `20260929_guest_competition_filters.sql`. Las migraciones son parte del release: desplegar solo el código sin aplicar la migración correspondiente puede dejar una acción visible sin permiso en la base.
+Ejecutar los archivos de `database/migrations` en orden cronológico, hasta `20261001_match_sheet_finalization_and_event_corrections.sql`. Las migraciones son parte del release: desplegar solo el código sin aplicar la migración correspondiente puede dejar una acción visible sin permiso en la base.
 
-Para reiniciar datos de prueba antes de producción sin perder el padrón de jugadores, usar una única vez [`database/admin/reset_competition_keep_player_registry.sql`](database/admin/reset_competition_keep_player_registry.sql). No borra usuarios, roles, árbitros, canchas ni jugadores: deja las fichas sin equipo activo para volver a asignarlas.
+Para retirar un único torneo ficticio sin afectar torneos reales, usar [`database/admin/retire_one_demo_tournament.sql`](database/admin/retire_one_demo_tournament.sql) con el UUID exacto del torneo QA o DEMO. Conserva el padrón global de jugadores y sólo desactiva equipos que no participen en otro torneo activo.
+
+[`database/admin/reset_competition_keep_player_registry.sql`](database/admin/reset_competition_keep_player_registry.sql) es un reinicio global previo a producción: no ejecutarlo cuando existan torneos operativos.
 
 La documentación funcional y el plan de continuidad están en [`docs/00-current-status.md`](docs/00-current-status.md) y [`docs/16-scope-audit-20260915.md`](docs/16-scope-audit-20260915.md).

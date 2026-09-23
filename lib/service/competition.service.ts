@@ -2,7 +2,7 @@ import { requireUser } from "@/lib/auth/session";
 import { getCurrentAccess } from "@/lib/auth/access";
 import { createClient } from "@/lib/supabase/server";
 import type { FixtureMatchValues, FixtureScheduleValues, RegularFixtureGeneratorValues, ResultValues } from "@/lib/validations/matches";
-import type { MatchEventValues } from "@/lib/validations/match-events";
+import type { MatchEventUpdateValues, MatchEventValues } from "@/lib/validations/match-events";
 import type { MatchSheetConfirmationValues, MatchSheetEntryValues, MatchSheetStatusValues } from "@/lib/validations/match-events";
 import { advancePlayoffWinner } from "@/lib/service/playoffs.service";
 
@@ -24,13 +24,14 @@ export type MatchReport = {
   awayTeamRegistrationId: string;
   homeTeam: string;
   awayTeam: string;
-  players: { id: string; teamRegistrationId: string; name: string; shirtNumber: number }[];
+  players: { id: string; teamRegistrationId: string; name: string; firstName: string; lastName: string; documentNumber: string | null; birthDate: string | null; age: number | null; shirtNumber: number }[];
   eventTypes: { id: string; code: string; name: string }[];
-  events: { id: string; playerName: string; eventName: string; minute: number; comments: string | null }[];
-  sheetEntries: { playerRegistrationId: string; shirtNumber: number | null; isPresent: boolean; isCaptain: boolean; isGoalkeeper: boolean; notes: string | null }[];
+  events: { id: string; playerRegistrationId: string; eventTypeId: string; playerName: string; eventName: string; minute: number; comments: string | null }[];
+  sheetEntries: { playerRegistrationId: string; shirtNumber: number | null; isPresent: boolean; isCaptain: boolean; isGoalkeeper: boolean; isStarter: boolean; notes: string | null }[];
   officials: { referee: string | null; assistant1: string | null; assistant2: string | null; supervisor: string | null };
-  confirmations: { confirmationType: "REFEREE" | "SUPERVISOR" | "HOME_DELEGATE" | "AWAY_DELEGATE"; confirmedAt: string }[];
+  confirmations: { confirmationType: "REFEREE" | "SUPERVISOR" | "HOME_DELEGATE" | "AWAY_DELEGATE"; confirmedAt: string; comments: string | null }[];
   sheetStatus: "DRAFT" | "OPEN" | "CLOSED" | null;
+  matchFinishedAt: string | null;
   permissions: { canManageSheet: boolean; canEditSheet: boolean; canConfirmHomeDelegate: boolean; canConfirmAwayDelegate: boolean; canConfirmOfficials: boolean };
 };
 
@@ -306,21 +307,22 @@ export async function getMatchReport(matchId: string): Promise<MatchReport> {
   const registrationIds = [matchData.home_team_registration_id, matchData.away_team_registration_id];
   const [registrationsResult, playersResult, eventTypesResult, eventsResult, entriesResult, confirmationsResult, controlResult, roleResult, homeDelegateResult, awayDelegateResult] = await Promise.all([
     supabase.from("team_category_registrations").select("id,display_name,team_id").in("id", registrationIds),
-    supabase.from("player_team_registrations").select("id,team_registration_id,shirt_number,players(first_name,last_name)").in("team_registration_id", registrationIds).is("deleted_at", null).is("left_at", null).order("shirt_number"),
+    supabase.from("player_team_registrations").select("id,team_registration_id,shirt_number,players(first_name,last_name,document_number,birth_date)").in("team_registration_id", registrationIds).is("deleted_at", null).is("left_at", null).order("shirt_number"),
     supabase.from("event_types").select("id,code,name").order("display_order"),
     supabase.from("match_events").select("id,player_registration_id,event_type_id,minute,comments").eq("match_id", matchId).order("minute"),
-    supabase.from("match_sheet_entries" as never).select("player_registration_id,shirt_number,is_present,is_captain,is_goalkeeper,notes").eq("match_id", matchId) as unknown as Promise<{ data: { player_registration_id: string; shirt_number: number | null; is_present: boolean; is_captain: boolean; is_goalkeeper: boolean; notes: string | null }[] | null; error: { message: string } | null }>,
-    supabase.from("match_sheet_confirmations" as never).select("confirmation_type,confirmed_at").eq("match_id", matchId) as unknown as Promise<{ data: { confirmation_type: "REFEREE" | "SUPERVISOR" | "HOME_DELEGATE" | "AWAY_DELEGATE"; confirmed_at: string }[] | null; error: { message: string } | null }>,
-    supabase.from("match_sheet_controls" as never).select("status").eq("match_id", matchId).maybeSingle() as unknown as Promise<{ data: { status: "DRAFT" | "OPEN" | "CLOSED" } | null; error: { message: string } | null }>,
+    supabase.from("match_sheet_entries" as never).select("player_registration_id,shirt_number,is_present,is_captain,is_goalkeeper,is_starter,notes").eq("match_id", matchId) as unknown as Promise<{ data: { player_registration_id: string; shirt_number: number | null; is_present: boolean; is_captain: boolean; is_goalkeeper: boolean; is_starter: boolean; notes: string | null }[] | null; error: { message: string } | null }>,
+    supabase.from("match_sheet_confirmations" as never).select("confirmation_type,confirmed_at,comments").eq("match_id", matchId) as unknown as Promise<{ data: { confirmation_type: "REFEREE" | "SUPERVISOR" | "HOME_DELEGATE" | "AWAY_DELEGATE"; confirmed_at: string; comments: string | null }[] | null; error: { message: string } | null }>,
+    supabase.from("match_sheet_controls" as never).select("status,match_finished_at").eq("match_id", matchId).maybeSingle() as unknown as Promise<{ data: { status: "DRAFT" | "OPEN" | "CLOSED"; match_finished_at: string | null } | null; error: { message: string } | null }>,
     supabase.rpc("current_role_code" as never) as unknown as Promise<{ data: string | null; error: { message: string } | null }>,
     supabase.rpc("can_confirm_match_as_delegate" as never, { target_match_id: matchId, target_confirmation_type: "HOME_DELEGATE" } as never) as unknown as Promise<{ data: boolean | null; error: { message: string } | null }>,
     supabase.rpc("can_confirm_match_as_delegate" as never, { target_match_id: matchId, target_confirmation_type: "AWAY_DELEGATE" } as never) as unknown as Promise<{ data: boolean | null; error: { message: string } | null }>,
   ]);
   for (const result of [registrationsResult, playersResult, eventTypesResult, eventsResult, entriesResult, confirmationsResult, controlResult, roleResult, homeDelegateResult, awayDelegateResult]) if (result.error) throw new Error(result.error.message);
   const players = (playersResult.data ?? []).map((row) => {
-    const player = row.players as unknown as { first_name: string; last_name: string } | { first_name: string; last_name: string }[] | null;
+    const player = row.players as unknown as { first_name: string; last_name: string; document_number: string | null; birth_date: string | null } | { first_name: string; last_name: string; document_number: string | null; birth_date: string | null }[] | null;
     const item = Array.isArray(player) ? player[0] : player;
-    return { id: row.id, teamRegistrationId: row.team_registration_id, name: `${item?.first_name ?? "Jugador"} ${item?.last_name ?? ""}`.trim(), shirtNumber: row.shirt_number };
+    const birthDate = item?.birth_date ?? null;
+    return { id: row.id, teamRegistrationId: row.team_registration_id, name: `${item?.first_name ?? "Jugador"} ${item?.last_name ?? ""}`.trim(), firstName: item?.first_name ?? "Jugador", lastName: item?.last_name ?? "", documentNumber: item?.document_number ?? null, birthDate, age: getAgeAtDate(birthDate), shirtNumber: row.shirt_number };
   });
   const eventTypes = eventTypesResult.data ?? [];
   const registrationRows = registrationsResult.data ?? [];
@@ -335,7 +337,17 @@ export async function getMatchReport(matchId: string): Promise<MatchReport> {
   const roleCode = roleResult.data ?? "PLAYER";
   const isAdministrator = roleCode === "SUPER_ADMIN" || roleCode === "TOURNAMENT_ADMIN";
   const isReferee = roleCode === "REFEREE";
-  return { id: matchData.id, homeTeamRegistrationId: matchData.home_team_registration_id, awayTeamRegistrationId: matchData.away_team_registration_id, homeTeam: registrations.get(matchData.home_team_registration_id) ?? "Local", awayTeam: registrations.get(matchData.away_team_registration_id) ?? "Visitante", officials: { referee: matchData.referee_id ? officialNames.get(matchData.referee_id) ?? null : null, assistant1: matchData.assistant_referee_1_id ? officialNames.get(matchData.assistant_referee_1_id) ?? null : null, assistant2: matchData.assistant_referee_2_id ? officialNames.get(matchData.assistant_referee_2_id) ?? null : null, supervisor: matchData.supervisor_referee_id ? officialNames.get(matchData.supervisor_referee_id) ?? null : null }, players, eventTypes, events: (eventsResult.data ?? []).map((event) => ({ id: event.id, playerName: players.find((player) => player.id === event.player_registration_id)?.name ?? "Jugador", eventName: eventTypes.find((type) => type.id === event.event_type_id)?.name ?? "Evento", minute: event.minute ?? 0, comments: event.comments })), sheetEntries: (entriesResult.data ?? []).map((entry) => ({ playerRegistrationId: entry.player_registration_id, shirtNumber: entry.shirt_number, isPresent: entry.is_present, isCaptain: entry.is_captain, isGoalkeeper: entry.is_goalkeeper, notes: entry.notes })), confirmations: (confirmationsResult.data ?? []).map((confirmation) => ({ confirmationType: confirmation.confirmation_type, confirmedAt: confirmation.confirmed_at })), sheetStatus: controlResult.data?.status ?? null, permissions: { canManageSheet: isAdministrator, canEditSheet: isAdministrator || isReferee, canConfirmHomeDelegate: isAdministrator || Boolean(homeDelegateResult.data), canConfirmAwayDelegate: isAdministrator || Boolean(awayDelegateResult.data), canConfirmOfficials: isAdministrator || isReferee } };
+  return { id: matchData.id, homeTeamRegistrationId: matchData.home_team_registration_id, awayTeamRegistrationId: matchData.away_team_registration_id, homeTeam: registrations.get(matchData.home_team_registration_id) ?? "Local", awayTeam: registrations.get(matchData.away_team_registration_id) ?? "Visitante", officials: { referee: matchData.referee_id ? officialNames.get(matchData.referee_id) ?? null : null, assistant1: matchData.assistant_referee_1_id ? officialNames.get(matchData.assistant_referee_1_id) ?? null : null, assistant2: matchData.assistant_referee_2_id ? officialNames.get(matchData.assistant_referee_2_id) ?? null : null, supervisor: matchData.supervisor_referee_id ? officialNames.get(matchData.supervisor_referee_id) ?? null : null }, players, eventTypes, events: (eventsResult.data ?? []).map((event) => ({ id: event.id, playerRegistrationId: event.player_registration_id, eventTypeId: event.event_type_id, playerName: players.find((player) => player.id === event.player_registration_id)?.name ?? "Jugador", eventName: eventTypes.find((type) => type.id === event.event_type_id)?.name ?? "Evento", minute: event.minute ?? 0, comments: event.comments })), sheetEntries: (entriesResult.data ?? []).map((entry) => ({ playerRegistrationId: entry.player_registration_id, shirtNumber: entry.shirt_number, isPresent: entry.is_present, isCaptain: entry.is_captain, isGoalkeeper: entry.is_goalkeeper, isStarter: entry.is_starter, notes: entry.notes })), confirmations: (confirmationsResult.data ?? []).map((confirmation) => ({ confirmationType: confirmation.confirmation_type, confirmedAt: confirmation.confirmed_at, comments: confirmation.comments })), sheetStatus: controlResult.data?.status ?? null, matchFinishedAt: controlResult.data?.match_finished_at ?? null, permissions: { canManageSheet: isAdministrator, canEditSheet: isAdministrator || isReferee, canConfirmHomeDelegate: isAdministrator || Boolean(homeDelegateResult.data), canConfirmAwayDelegate: isAdministrator || Boolean(awayDelegateResult.data), canConfirmOfficials: isAdministrator || isReferee } };
+}
+
+function getAgeAtDate(birthDate: string | null) {
+  if (!birthDate) return null;
+  const [year, month, day] = birthDate.split("-").map(Number);
+  if (!year || !month || !day) return null;
+  const today = new Date();
+  let age = today.getFullYear() - year;
+  if (today.getMonth() + 1 < month || (today.getMonth() + 1 === month && today.getDate() < day)) age -= 1;
+  return age >= 0 ? age : null;
 }
 
 export async function setMatchSheetStatus(values: MatchSheetStatusValues) {
@@ -344,7 +356,7 @@ export async function setMatchSheetStatus(values: MatchSheetStatusValues) {
     const { error } = await (supabase.from("match_sheet_controls" as never).insert({ match_id: values.matchId, status: "DRAFT", created_by: user.id }) as unknown as Promise<{ error: { message: string } | null }>);
     if (error) throw new Error(error.message); return;
   }
-  const patch = values.status === "OPEN" ? { status: "OPEN", opened_by: user.id, opened_at: now, updated_at: now } : { status: "CLOSED", closed_by: user.id, closed_at: now, closing_observations: values.closingObservations || null, updated_at: now };
+  const patch = values.status === "OPEN" ? { status: "OPEN", opened_by: user.id, opened_at: now, match_finished_at: null, match_finished_by: null, updated_at: now } : { status: "CLOSED", closed_by: user.id, closed_at: now, closing_observations: values.closingObservations || null, updated_at: now };
   const { error } = await (supabase.from("match_sheet_controls" as never).update(patch).eq("match_id", values.matchId) as unknown as Promise<{ error: { message: string } | null }>);
   if (error) throw new Error(error.message);
 }
@@ -361,13 +373,27 @@ export async function cancelDraftMatchSheet(matchId: string) {
   if (deleteError) throw new Error(deleteError.message);
 }
 
+async function assertOpenSheetEditor(matchId: string) {
+  const supabase = await createClient();
+  const [{ data: control, error: controlError }, { data: roleCode, error: roleError }] = await Promise.all([
+    supabase.from("match_sheet_controls" as never).select("status,match_finished_at").eq("match_id", matchId).maybeSingle() as unknown as Promise<{ data: { status: "DRAFT" | "OPEN" | "CLOSED"; match_finished_at: string | null } | null; error: { message: string } | null }>,
+    supabase.rpc("current_role_code" as never) as unknown as Promise<{ data: string | null; error: { message: string } | null }>,
+  ]);
+  if (controlError) throw new Error(controlError.message);
+  if (roleError) throw new Error(roleError.message);
+  if (control?.status !== "OPEN") throw new Error("La planilla debe estar abierta para modificarla.");
+  if (control.match_finished_at) throw new Error("El partido fue finalizado. Solo un administrador puede reabrir la planilla para corregirlo.");
+  if (!(["SUPER_ADMIN", "TOURNAMENT_ADMIN", "REFEREE"] as const).includes(roleCode as "SUPER_ADMIN" | "TOURNAMENT_ADMIN" | "REFEREE")) throw new Error("No tenés permiso para editar esta planilla.");
+  return supabase;
+}
+
 export async function saveMatchSheetEntry(values: MatchSheetEntryValues) {
   const user = await requireUser();
-  const supabase = await createClient();
+  const supabase = await assertOpenSheetEditor(values.matchId);
   const { data: player, error: playerError } = await supabase.from("player_team_registrations").select("team_registration_id").eq("id", values.playerRegistrationId).is("deleted_at", null).is("left_at", null).single();
   if (playerError) throw new Error(playerError.message);
   if (player.team_registration_id !== values.teamRegistrationId) throw new Error("El jugador no pertenece al equipo seleccionado.");
-  const { error } = await (supabase.from("match_sheet_entries" as never).upsert({ match_id: values.matchId, player_registration_id: values.playerRegistrationId, team_registration_id: values.teamRegistrationId, shirt_number: values.shirtNumber, is_present: values.isPresent, is_captain: values.isCaptain, is_goalkeeper: values.isGoalkeeper, notes: values.notes || null, updated_by: user.id, updated_at: new Date().toISOString() }, { onConflict: "match_id,player_registration_id" }) as unknown as Promise<{ error: { message: string } | null }>);
+  const { error } = await (supabase.from("match_sheet_entries" as never).upsert({ match_id: values.matchId, player_registration_id: values.playerRegistrationId, team_registration_id: values.teamRegistrationId, shirt_number: values.shirtNumber, is_present: values.isPresent, is_captain: values.isCaptain, is_goalkeeper: values.isGoalkeeper, is_starter: values.isStarter, notes: values.notes || null, updated_by: user.id, updated_at: new Date().toISOString() }, { onConflict: "match_id,player_registration_id" }) as unknown as Promise<{ error: { message: string } | null }>);
   if (error) throw new Error(error.message);
 }
 
@@ -376,8 +402,16 @@ export async function confirmMatchSheet(values: MatchSheetConfirmationValues) {
   const supabase = await createClient();
   const { data: match, error: matchError } = await supabase.from("matches").select("home_team_registration_id,away_team_registration_id,supervisor_referee_id").eq("id", values.matchId).single();
   if (matchError) throw new Error(matchError.message);
-  const { data: roleCode, error: roleError } = await (supabase.rpc("current_role_code" as never) as unknown as Promise<{ data: string | null; error: { message: string } | null }>);
+  const [{ data: roleCode, error: roleError }, { data: control, error: controlError }, { data: confirmationRows, error: confirmationsError }] = await Promise.all([
+    supabase.rpc("current_role_code" as never) as unknown as Promise<{ data: string | null; error: { message: string } | null }>,
+    supabase.from("match_sheet_controls" as never).select("status,match_finished_at").eq("match_id", values.matchId).maybeSingle() as unknown as Promise<{ data: { status: "DRAFT" | "OPEN" | "CLOSED"; match_finished_at: string | null } | null; error: { message: string } | null }>,
+    supabase.from("match_sheet_confirmations" as never).select("confirmation_type").eq("match_id", values.matchId) as unknown as Promise<{ data: { confirmation_type: string }[] | null; error: { message: string } | null }>,
+  ]);
   if (roleError) throw new Error(roleError.message);
+  if (controlError) throw new Error(controlError.message);
+  if (confirmationsError) throw new Error(confirmationsError.message);
+  if (control?.status !== "OPEN") throw new Error("La planilla debe estar abierta para registrar una confirmación.");
+  if (!control.match_finished_at) throw new Error("Primero se debe marcar el partido como finalizado.");
   const isAdministrator = roleCode === "SUPER_ADMIN" || roleCode === "TOURNAMENT_ADMIN";
   const isReferee = roleCode === "REFEREE";
   if (values.confirmationType === "SUPERVISOR" && !match.supervisor_referee_id) throw new Error("No hay un veedor designado para este partido.");
@@ -387,21 +421,47 @@ export async function confirmMatchSheet(values: MatchSheetConfirmationValues) {
     if (delegateError) throw new Error(delegateError.message);
     if (!canConfirm) throw new Error("No sos el delegado asignado para este equipo.");
   }
+  const confirmed = new Set((confirmationRows ?? []).map((row) => row.confirmation_type));
+  const delegatesConfirmed = confirmed.has("HOME_DELEGATE") && confirmed.has("AWAY_DELEGATE");
+  if ((values.confirmationType === "REFEREE" || values.confirmationType === "SUPERVISOR") && !delegatesConfirmed) throw new Error("Primero deben confirmar ambos delegados antes de la terna arbitral.");
+  if (values.confirmationType === "SUPERVISOR" && !confirmed.has("REFEREE")) throw new Error("Primero debe confirmar el árbitro y luego el veedor.");
   const teamRegistrationId = values.confirmationType === "HOME_DELEGATE" ? match.home_team_registration_id : values.confirmationType === "AWAY_DELEGATE" ? match.away_team_registration_id : null;
   const labels = { REFEREE: "Árbitro", SUPERVISOR: "Veedor", HOME_DELEGATE: "Delegado local", AWAY_DELEGATE: "Delegado visitante" };
-  const { error } = await (supabase.from("match_sheet_confirmations" as never).upsert({ match_id: values.matchId, team_registration_id: teamRegistrationId, confirmation_type: values.confirmationType, profile_id: user.id, declaration: `${labels[values.confirmationType]} confirma digitalmente la planilla y los datos registrados.`, confirmed_at: new Date().toISOString() }, { onConflict: "match_id,confirmation_type" }) as unknown as Promise<{ error: { message: string } | null }>);
+  const { error } = await (supabase.from("match_sheet_confirmations" as never).upsert({ match_id: values.matchId, team_registration_id: teamRegistrationId, confirmation_type: values.confirmationType, profile_id: user.id, declaration: `${labels[values.confirmationType]} confirma digitalmente la planilla y los datos registrados.`, comments: values.comments || null, confirmed_at: new Date().toISOString() }, { onConflict: "match_id,confirmation_type" }) as unknown as Promise<{ error: { message: string } | null }>);
   if (error) throw new Error(error.message);
 }
 
 export async function createMatchEvent(values: MatchEventValues) {
   await requireUser();
-  const supabase = await createClient();
+  const supabase = await assertOpenSheetEditor(values.matchId);
   const { data: match, error: matchError } = await supabase.from("matches").select("home_team_registration_id,away_team_registration_id").eq("id", values.matchId).is("deleted_at", null).single();
   if (matchError) throw new Error(matchError.message);
   const { data: player, error: playerError } = await supabase.from("player_team_registrations").select("team_registration_id").eq("id", values.playerRegistrationId).is("deleted_at", null).is("left_at", null).single();
   if (playerError) throw new Error(playerError.message);
   if (![match.home_team_registration_id, match.away_team_registration_id].includes(player.team_registration_id)) throw new Error("El jugador no forma parte de este partido.");
   const { error } = await supabase.from("match_events").insert({ match_id: values.matchId, player_registration_id: values.playerRegistrationId, team_registration_id: player.team_registration_id, event_type_id: values.eventTypeId, minute: values.minute, comments: values.comments || null });
+  if (error) throw new Error(error.message);
+}
+
+export async function updateMatchEvent(values: MatchEventUpdateValues) {
+  await requireUser();
+  const supabase = await assertOpenSheetEditor(values.matchId);
+  const { data: match, error: matchError } = await supabase.from("matches").select("home_team_registration_id,away_team_registration_id").eq("id", values.matchId).is("deleted_at", null).single();
+  if (matchError) throw new Error(matchError.message);
+  const { data: player, error: playerError } = await supabase.from("player_team_registrations").select("team_registration_id").eq("id", values.playerRegistrationId).is("deleted_at", null).is("left_at", null).single();
+  if (playerError) throw new Error(playerError.message);
+  if (![match.home_team_registration_id, match.away_team_registration_id].includes(player.team_registration_id)) throw new Error("El jugador no forma parte de este partido.");
+  const { error } = await supabase.from("match_events").update({ player_registration_id: values.playerRegistrationId, team_registration_id: player.team_registration_id, event_type_id: values.eventTypeId, minute: values.minute, comments: values.comments || null }).eq("id", values.id).eq("match_id", values.matchId);
+  if (error) throw new Error(error.message);
+}
+
+export async function finishMatchSheet(matchId: string) {
+  const user = await requireUser();
+  const supabase = await createClient();
+  const { data: roleCode, error: roleError } = await (supabase.rpc("current_role_code" as never) as unknown as Promise<{ data: string | null; error: { message: string } | null }>);
+  if (roleError) throw new Error(roleError.message);
+  if (!(["SUPER_ADMIN", "TOURNAMENT_ADMIN", "REFEREE"] as const).includes(roleCode as "SUPER_ADMIN" | "TOURNAMENT_ADMIN" | "REFEREE")) throw new Error("No tenés permiso para finalizar el partido.");
+  const { error } = await (supabase.from("match_sheet_controls" as never).update({ match_finished_at: new Date().toISOString(), match_finished_by: user.id, updated_at: new Date().toISOString() }).eq("match_id", matchId).eq("status", "OPEN").is("match_finished_at", null) as unknown as Promise<{ error: { message: string } | null }>);
   if (error) throw new Error(error.message);
 }
 

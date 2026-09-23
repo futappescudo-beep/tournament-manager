@@ -10,6 +10,12 @@ export const matchEventSchema = z.object({
 
 export type MatchEventValues = z.infer<typeof matchEventSchema>;
 
+export const matchEventUpdateSchema = matchEventSchema.extend({
+  id: z.uuid(),
+});
+
+export type MatchEventUpdateValues = z.infer<typeof matchEventUpdateSchema>;
+
 export const matchSheetEntrySchema = z.object({
   matchId: z.uuid(),
   playerRegistrationId: z.uuid(),
@@ -18,18 +24,22 @@ export const matchSheetEntrySchema = z.object({
   isPresent: z.boolean(),
   isCaptain: z.boolean().default(false),
   isGoalkeeper: z.boolean().default(false),
+  isStarter: z.boolean().default(false),
   notes: z.string().trim().max(240).optional(),
 });
 
 export const matchSheetConfirmationSchema = z.object({
   matchId: z.uuid(),
   confirmationType: z.enum(["REFEREE", "SUPERVISOR", "HOME_DELEGATE", "AWAY_DELEGATE"]),
+  comments: z.string().trim().max(600, "El comentario o reclamo no puede superar 600 caracteres.").optional(),
 });
 
 export const matchSheetStatusSchema = z.object({ matchId: z.uuid(), status: z.enum(["DRAFT", "OPEN", "CLOSED"]), closingObservations: z.string().trim().max(600).optional() });
 export const matchSheetCancelSchema = z.object({ matchId: z.uuid() });
+export const matchSheetFinishSchema = z.object({ matchId: z.uuid() });
 
 export type MatchSheetEntryValues = z.infer<typeof matchSheetEntrySchema>;
 export type MatchSheetConfirmationValues = z.infer<typeof matchSheetConfirmationSchema>;
 export type MatchSheetStatusValues = z.infer<typeof matchSheetStatusSchema>;
 export type MatchSheetCancelValues = z.infer<typeof matchSheetCancelSchema>;
+export type MatchSheetFinishValues = z.infer<typeof matchSheetFinishSchema>;
