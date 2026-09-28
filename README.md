@@ -26,7 +26,7 @@ Aplicación web responsive para administrar torneos de fútbol amateur. Incluye 
 
 ## Migraciones de Supabase
 
-Ejecutar los archivos de `database/migrations` en orden cronológico, hasta `20261001_match_sheet_finalization_and_event_corrections.sql`. Las migraciones son parte del release: desplegar solo el código sin aplicar la migración correspondiente puede dejar una acción visible sin permiso en la base.
+Ejecutar los archivos de `database/migrations` en orden cronológico, hasta `20261002_referee_sheet_write_policies.sql`. Las migraciones son parte del release: desplegar solo el código sin aplicar la migración correspondiente puede dejar una acción visible sin permiso en la base.
 
 Para retirar un único torneo ficticio sin afectar torneos reales, usar [`database/admin/retire_one_demo_tournament.sql`](database/admin/retire_one_demo_tournament.sql) con el UUID exacto del torneo QA o DEMO. Conserva el padrón global de jugadores y sólo desactiva equipos que no participen en otro torneo activo.
 
