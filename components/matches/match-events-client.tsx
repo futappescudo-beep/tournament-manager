@@ -47,8 +47,8 @@ export function MatchEventsClient({ report }: { report: MatchReport }) {
     catch (error) { toast.error(error instanceof Error ? error.message : "No se pudieron guardar los datos."); } finally { setSavingId(null); }
   }
   async function submitEvent(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setLoading(true); const form = new FormData(event.currentTarget);
-    try { await saveMatchEvent({ matchId: report.id, playerRegistrationId: eventPlayerId, eventTypeId, minute: Number(form.get("minute")), comments: String(form.get("comments") ?? "") }); setEventPlayerId(""); setEventTypeId(""); event.currentTarget.reset(); toast.success("Evento registrado."); }
+    event.preventDefault(); setLoading(true); const formElement = event.currentTarget; const form = new FormData(formElement);
+    try { await saveMatchEvent({ matchId: report.id, playerRegistrationId: eventPlayerId, eventTypeId, minute: Number(form.get("minute")), comments: String(form.get("comments") ?? "") }); setEventPlayerId(""); setEventTypeId(""); formElement.reset(); toast.success("Evento registrado."); }
     catch (error) { toast.error(error instanceof Error ? error.message : "No se pudo registrar el evento."); } finally { setLoading(false); }
   }
   async function submitEventEdit(event: React.FormEvent<HTMLFormElement>) {
