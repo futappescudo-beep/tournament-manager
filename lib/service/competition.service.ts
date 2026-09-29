@@ -393,6 +393,12 @@ export async function saveMatchSheetEntry(values: MatchSheetEntryValues) {
   const { data: player, error: playerError } = await supabase.from("player_team_registrations").select("team_registration_id").eq("id", values.playerRegistrationId).is("deleted_at", null).is("left_at", null).single();
   if (playerError) throw new Error(playerError.message);
   if (player.team_registration_id !== values.teamRegistrationId) throw new Error("El jugador no pertenece al equipo seleccionado.");
+  if (values.isStarter) {
+    const { data: starters, error: startersError } = await (supabase.from("match_sheet_entries" as never).select("player_registration_id").eq("match_id", values.matchId).eq("team_registration_id", values.teamRegistrationId).eq("is_starter", true) as unknown as Promise<{ data: { player_registration_id: string }[] | null; error: { message: string } | null }>);
+    if (startersError) throw new Error(startersError.message);
+    const alreadyStarter = (starters ?? []).some((entry) => entry.player_registration_id === values.playerRegistrationId);
+    if (!alreadyStarter && (starters ?? []).length >= 11) throw new Error("Cada equipo puede tener como máximo 11 titulares en la planilla.");
+  }
   const { error } = await (supabase.from("match_sheet_entries" as never).upsert({ match_id: values.matchId, player_registration_id: values.playerRegistrationId, team_registration_id: values.teamRegistrationId, shirt_number: values.shirtNumber, is_present: values.isPresent, is_captain: values.isCaptain, is_goalkeeper: values.isGoalkeeper, is_starter: values.isStarter, notes: values.notes || null, updated_by: user.id, updated_at: new Date().toISOString() }, { onConflict: "match_id,player_registration_id" }) as unknown as Promise<{ error: { message: string } | null }>);
   if (error) throw new Error(error.message);
 }
