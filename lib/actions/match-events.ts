@@ -1,8 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { matchEventSchema, matchEventUpdateSchema, matchSheetCancelSchema, matchSheetConfirmationSchema, matchSheetEntrySchema, matchSheetFinishSchema, matchSheetStatusSchema, type MatchEventValues, type MatchEventUpdateValues, type MatchSheetConfirmationValues, type MatchSheetEntryValues, type MatchSheetStatusValues } from "@/lib/validations/match-events";
-import { cancelDraftMatchSheet, createMatchEvent, confirmMatchSheet, finishMatchSheet as finishMatchSheetService, saveMatchSheetEntry, setMatchSheetStatus, updateMatchEvent } from "@/lib/service/competition.service";
+import { matchClockSchema, matchEventSchema, matchEventUpdateSchema, matchSheetCancelSchema, matchSheetConfirmationSchema, matchSheetEntrySchema, matchSheetFinishSchema, matchSheetStatusSchema, type MatchClockValues, type MatchEventValues, type MatchEventUpdateValues, type MatchSheetConfirmationValues, type MatchSheetEntryValues, type MatchSheetStatusValues } from "@/lib/validations/match-events";
+import { cancelDraftMatchSheet, createMatchEvent, confirmMatchSheet, finishMatchSheet as finishMatchSheetService, saveMatchSheetEntry, setMatchSheetStatus, updateMatchClock as updateMatchClockService, updateMatchEvent } from "@/lib/service/competition.service";
 
 export async function saveMatchEvent(values: MatchEventValues) {
   const event = matchEventSchema.parse(values);
@@ -49,4 +49,12 @@ export async function finishMatchSheet(values: { matchId: string }) {
   const sheet = matchSheetFinishSchema.parse(values);
   await finishMatchSheetService(sheet.matchId);
   revalidatePath(`/matches/${sheet.matchId}`);
+}
+
+export async function updateMatchClock(values: MatchClockValues) {
+  const clock = matchClockSchema.parse(values);
+  await updateMatchClockService(clock);
+  revalidatePath(`/matches/${clock.matchId}`);
+  revalidatePath("/dashboard");
+  revalidatePath("/matches");
 }

@@ -15,7 +15,8 @@ Aplicación web responsive para administrar torneos de fútbol amateur. Incluye 
 - Fixture manual y generación automática de una rueda regular por zona; programación posterior de día, horario, cancha y terna arbitral.
 - Play Off flexible de Oro, Plata u otra copa, con llaves y avance de ganadores.
 - Resultados, eventos, sanciones, goleadores, dashboard y posiciones.
-- Planilla digital con estados preliminar, abierta, partido finalizado y cerrada; búsqueda por DNI/nombre, presentismo, número de camiseta, titular/capitán/arquero por partido, eventos corregibles y confirmaciones digitales secuenciales.
+- Planilla digital con estados preliminar, abierta, en juego, partido finalizado y cerrada; cronómetro persistente, hasta dos partidos simultáneos por torneo, búsqueda por DNI/nombre, presentismo, número de camiseta, titular/capitán/arquero por partido, eventos corregibles y confirmaciones digitales secuenciales.
+- Actualización en tiempo real de marcadores, eventos y estado de juego en el Dashboard para usuarios autenticados.
 - Archivo de torneo que lo excluye de la operación activa sin borrar sus datos.
 
 ## Pendientes principales
@@ -26,7 +27,7 @@ Aplicación web responsive para administrar torneos de fútbol amateur. Incluye 
 
 ## Migraciones de Supabase
 
-Ejecutar los archivos de `database/migrations` en orden cronológico, hasta `20261003_match_sheet_starter_limit.sql`. Las migraciones son parte del release: desplegar solo el código sin aplicar la migración correspondiente puede dejar una acción visible sin permiso en la base.
+Ejecutar los archivos de `database/migrations` en orden cronológico, hasta `20261004_live_match_clock_and_realtime.sql`. Las migraciones son parte del release: desplegar solo el código sin aplicar la migración correspondiente puede dejar una acción visible sin permiso en la base.
 
 Para retirar un único torneo ficticio sin afectar torneos reales, usar [`database/admin/retire_one_demo_tournament.sql`](database/admin/retire_one_demo_tournament.sql) con el UUID exacto del torneo QA o DEMO. Conserva el padrón global de jugadores y sólo desactiva equipos que no participen en otro torneo activo.
 

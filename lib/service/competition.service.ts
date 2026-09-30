@@ -3,10 +3,10 @@ import { getCurrentAccess } from "@/lib/auth/access";
 import { createClient } from "@/lib/supabase/server";
 import type { FixtureMatchValues, FixtureScheduleValues, RegularFixtureGeneratorValues, ResultValues } from "@/lib/validations/matches";
 import type { MatchEventUpdateValues, MatchEventValues } from "@/lib/validations/match-events";
-import type { MatchSheetConfirmationValues, MatchSheetEntryValues, MatchSheetStatusValues } from "@/lib/validations/match-events";
+import type { MatchClockValues, MatchSheetConfirmationValues, MatchSheetEntryValues, MatchSheetStatusValues } from "@/lib/validations/match-events";
 import { advancePlayoffWinner } from "@/lib/service/playoffs.service";
 
-export type FixtureMatch = { id: string; round: number | null; match_date: string | null; kickoff_time: string | null; home_team: string | null; away_team: string | null; field: string | null; referee: string | null; supervisor: string | null; home_score: number | null; away_score: number | null; tournamentId?: string | null; categoryId?: string | null; zoneId?: string | null; phaseId?: string | null; phaseName?: string | null; fieldId?: string | null; refereeId?: string | null; assistantReferee1Id?: string | null; assistantReferee2Id?: string | null; supervisorRefereeId?: string | null; sheetStatus?: "DRAFT" | "OPEN" | "CLOSED" | null; };
+export type FixtureMatch = { id: string; round: number | null; match_date: string | null; kickoff_time: string | null; home_team: string | null; away_team: string | null; field: string | null; referee: string | null; supervisor: string | null; home_score: number | null; away_score: number | null; tournamentId?: string | null; categoryId?: string | null; zoneId?: string | null; phaseId?: string | null; phaseName?: string | null; fieldId?: string | null; refereeId?: string | null; assistantReferee1Id?: string | null; assistantReferee2Id?: string | null; supervisorRefereeId?: string | null; sheetStatus?: "DRAFT" | "OPEN" | "CLOSED" | null; clockStatus?: "NOT_STARTED" | "RUNNING" | "PAUSED" | "FINISHED" | null; clockStartedAt?: string | null; clockElapsedSeconds?: number | null; };
 export type Standing = { team_registration_id: string | null; display_name: string | null; competition_phase_id: string | null; competition_group_id: string | null; played: number | null; won: number | null; drawn: number | null; lost: number | null; goals_for: number | null; goals_against: number | null; tournamentId?: string | null; categoryId?: string | null; zoneId?: string | null; };
 export type PublicCompetitionCatalog = { tournaments: { id: string; name: string }[]; categories: { id: string; tournamentId: string; name: string }[]; zones: { id: string; categoryId: string; name: string }[]; };
 export type FixtureSetup = {
@@ -32,6 +32,7 @@ export type MatchReport = {
   confirmations: { confirmationType: "REFEREE" | "SUPERVISOR" | "HOME_DELEGATE" | "AWAY_DELEGATE"; confirmedAt: string; comments: string | null }[];
   sheetStatus: "DRAFT" | "OPEN" | "CLOSED" | null;
   matchFinishedAt: string | null;
+  clock: { status: "NOT_STARTED" | "RUNNING" | "PAUSED" | "FINISHED"; startedAt: string | null; elapsedSeconds: number };
   permissions: { canManageSheet: boolean; canEditSheet: boolean; canConfirmHomeDelegate: boolean; canConfirmAwayDelegate: boolean; canConfirmOfficials: boolean };
 };
 
@@ -113,12 +114,12 @@ export async function getFixture(): Promise<FixtureMatch[]> {
   if (error) throw new Error(error.message);
   const matches = (data ?? []) as FixtureMatch[];
   const [controlsResult, schedulingResult] = await Promise.all([
-    supabase.from("match_sheet_controls" as never).select("match_id,status") as unknown as Promise<{ data: { match_id: string; status: "DRAFT" | "OPEN" | "CLOSED" }[] | null; error: { message: string } | null }>,
+    supabase.from("match_sheet_controls" as never).select("match_id,status,clock_status,clock_started_at,clock_elapsed_seconds") as unknown as Promise<{ data: { match_id: string; status: "DRAFT" | "OPEN" | "CLOSED"; clock_status: "NOT_STARTED" | "RUNNING" | "PAUSED" | "FINISHED"; clock_started_at: string | null; clock_elapsed_seconds: number | null }[] | null; error: { message: string } | null }>,
     supabase.from("matches").select("id,matchday_id,competition_phase_id,field_id,referee_id,assistant_referee_1_id,assistant_referee_2_id,supervisor_referee_id").in("id", matches.map((match) => match.id)),
   ]);
   const { data: controls, error: controlsError } = controlsResult;
   if (schedulingResult.error) throw new Error(schedulingResult.error.message);
-  const statuses = new Map((controlsError ? [] : controls ?? []).map((control) => [control.match_id, control.status]));
+  const controlsByMatch = new Map((controlsError ? [] : controls ?? []).map((control) => [control.match_id, control]));
   const schedules = new Map((schedulingResult.data ?? []).map((match) => [match.id, match]));
   const matchdayIds = [...new Set((schedulingResult.data ?? []).map((match) => match.matchday_id))];
   const phaseIds = [...new Set((schedulingResult.data ?? []).map((match) => match.competition_phase_id))];
@@ -135,7 +136,7 @@ export async function getFixture(): Promise<FixtureMatch[]> {
   if (tournamentsError) throw new Error(tournamentsError.message);
   const activeTournamentIds = new Set((activeTournaments ?? []).map((tournament) => tournament.id));
   const phases = new Map((phasesResult.data ?? []).map((phase) => [phase.id, phase.name]));
-  return matches.filter((match) => { const schedule = schedules.get(match.id); const matchday = schedule ? matchdays.get(schedule.matchday_id) : null; return Boolean(matchday && activeTournamentIds.has(matchday.tournament_id)); }).map((match) => { const schedule = schedules.get(match.id); const matchday = schedule ? matchdays.get(schedule.matchday_id) : null; return { ...match, tournamentId: matchday?.tournament_id ?? null, categoryId: matchday?.category_id ?? null, zoneId: matchday?.zone_id ?? null, phaseId: schedule?.competition_phase_id ?? null, phaseName: schedule?.competition_phase_id ? phases.get(schedule.competition_phase_id) ?? null : null, fieldId: schedule?.field_id ?? null, refereeId: schedule?.referee_id ?? null, assistantReferee1Id: schedule?.assistant_referee_1_id ?? null, assistantReferee2Id: schedule?.assistant_referee_2_id ?? null, supervisorRefereeId: schedule?.supervisor_referee_id ?? null, sheetStatus: statuses.get(match.id) ?? null }; });
+  return matches.filter((match) => { const schedule = schedules.get(match.id); const matchday = schedule ? matchdays.get(schedule.matchday_id) : null; return Boolean(matchday && activeTournamentIds.has(matchday.tournament_id)); }).map((match) => { const schedule = schedules.get(match.id); const matchday = schedule ? matchdays.get(schedule.matchday_id) : null; const control = controlsByMatch.get(match.id); return { ...match, tournamentId: matchday?.tournament_id ?? null, categoryId: matchday?.category_id ?? null, zoneId: matchday?.zone_id ?? null, phaseId: schedule?.competition_phase_id ?? null, phaseName: schedule?.competition_phase_id ? phases.get(schedule.competition_phase_id) ?? null : null, fieldId: schedule?.field_id ?? null, refereeId: schedule?.referee_id ?? null, assistantReferee1Id: schedule?.assistant_referee_1_id ?? null, assistantReferee2Id: schedule?.assistant_referee_2_id ?? null, supervisorRefereeId: schedule?.supervisor_referee_id ?? null, sheetStatus: control?.status ?? null, clockStatus: control?.clock_status ?? null, clockStartedAt: control?.clock_started_at ?? null, clockElapsedSeconds: control?.clock_elapsed_seconds ?? null }; });
 }
 
 export async function getPublicFixture(): Promise<FixtureMatch[]> {
@@ -312,7 +313,7 @@ export async function getMatchReport(matchId: string): Promise<MatchReport> {
     supabase.from("match_events").select("id,player_registration_id,event_type_id,minute,comments").eq("match_id", matchId).order("minute"),
     supabase.from("match_sheet_entries" as never).select("player_registration_id,shirt_number,is_present,is_captain,is_goalkeeper,is_starter,notes").eq("match_id", matchId) as unknown as Promise<{ data: { player_registration_id: string; shirt_number: number | null; is_present: boolean; is_captain: boolean; is_goalkeeper: boolean; is_starter: boolean; notes: string | null }[] | null; error: { message: string } | null }>,
     supabase.from("match_sheet_confirmations" as never).select("confirmation_type,confirmed_at,comments").eq("match_id", matchId) as unknown as Promise<{ data: { confirmation_type: "REFEREE" | "SUPERVISOR" | "HOME_DELEGATE" | "AWAY_DELEGATE"; confirmed_at: string; comments: string | null }[] | null; error: { message: string } | null }>,
-    supabase.from("match_sheet_controls" as never).select("status,match_finished_at").eq("match_id", matchId).maybeSingle() as unknown as Promise<{ data: { status: "DRAFT" | "OPEN" | "CLOSED"; match_finished_at: string | null } | null; error: { message: string } | null }>,
+    supabase.from("match_sheet_controls" as never).select("status,match_finished_at,clock_status,clock_started_at,clock_elapsed_seconds").eq("match_id", matchId).maybeSingle() as unknown as Promise<{ data: { status: "DRAFT" | "OPEN" | "CLOSED"; match_finished_at: string | null; clock_status: "NOT_STARTED" | "RUNNING" | "PAUSED" | "FINISHED"; clock_started_at: string | null; clock_elapsed_seconds: number | null } | null; error: { message: string } | null }>,
     supabase.rpc("current_role_code" as never) as unknown as Promise<{ data: string | null; error: { message: string } | null }>,
     supabase.rpc("can_confirm_match_as_delegate" as never, { target_match_id: matchId, target_confirmation_type: "HOME_DELEGATE" } as never) as unknown as Promise<{ data: boolean | null; error: { message: string } | null }>,
     supabase.rpc("can_confirm_match_as_delegate" as never, { target_match_id: matchId, target_confirmation_type: "AWAY_DELEGATE" } as never) as unknown as Promise<{ data: boolean | null; error: { message: string } | null }>,
@@ -337,7 +338,7 @@ export async function getMatchReport(matchId: string): Promise<MatchReport> {
   const roleCode = roleResult.data ?? "PLAYER";
   const isAdministrator = roleCode === "SUPER_ADMIN" || roleCode === "TOURNAMENT_ADMIN";
   const isReferee = roleCode === "REFEREE";
-  return { id: matchData.id, homeTeamRegistrationId: matchData.home_team_registration_id, awayTeamRegistrationId: matchData.away_team_registration_id, homeTeam: registrations.get(matchData.home_team_registration_id) ?? "Local", awayTeam: registrations.get(matchData.away_team_registration_id) ?? "Visitante", officials: { referee: matchData.referee_id ? officialNames.get(matchData.referee_id) ?? null : null, assistant1: matchData.assistant_referee_1_id ? officialNames.get(matchData.assistant_referee_1_id) ?? null : null, assistant2: matchData.assistant_referee_2_id ? officialNames.get(matchData.assistant_referee_2_id) ?? null : null, supervisor: matchData.supervisor_referee_id ? officialNames.get(matchData.supervisor_referee_id) ?? null : null }, players, eventTypes, events: (eventsResult.data ?? []).map((event) => ({ id: event.id, playerRegistrationId: event.player_registration_id, eventTypeId: event.event_type_id, playerName: players.find((player) => player.id === event.player_registration_id)?.name ?? "Jugador", eventName: eventTypes.find((type) => type.id === event.event_type_id)?.name ?? "Evento", minute: event.minute ?? 0, comments: event.comments })), sheetEntries: (entriesResult.data ?? []).map((entry) => ({ playerRegistrationId: entry.player_registration_id, shirtNumber: entry.shirt_number, isPresent: entry.is_present, isCaptain: entry.is_captain, isGoalkeeper: entry.is_goalkeeper, isStarter: entry.is_starter, notes: entry.notes })), confirmations: (confirmationsResult.data ?? []).map((confirmation) => ({ confirmationType: confirmation.confirmation_type, confirmedAt: confirmation.confirmed_at, comments: confirmation.comments })), sheetStatus: controlResult.data?.status ?? null, matchFinishedAt: controlResult.data?.match_finished_at ?? null, permissions: { canManageSheet: isAdministrator, canEditSheet: isAdministrator || isReferee, canConfirmHomeDelegate: isAdministrator || Boolean(homeDelegateResult.data), canConfirmAwayDelegate: isAdministrator || Boolean(awayDelegateResult.data), canConfirmOfficials: isAdministrator || isReferee } };
+  return { id: matchData.id, homeTeamRegistrationId: matchData.home_team_registration_id, awayTeamRegistrationId: matchData.away_team_registration_id, homeTeam: registrations.get(matchData.home_team_registration_id) ?? "Local", awayTeam: registrations.get(matchData.away_team_registration_id) ?? "Visitante", officials: { referee: matchData.referee_id ? officialNames.get(matchData.referee_id) ?? null : null, assistant1: matchData.assistant_referee_1_id ? officialNames.get(matchData.assistant_referee_1_id) ?? null : null, assistant2: matchData.assistant_referee_2_id ? officialNames.get(matchData.assistant_referee_2_id) ?? null : null, supervisor: matchData.supervisor_referee_id ? officialNames.get(matchData.supervisor_referee_id) ?? null : null }, players, eventTypes, events: (eventsResult.data ?? []).map((event) => ({ id: event.id, playerRegistrationId: event.player_registration_id, eventTypeId: event.event_type_id, playerName: players.find((player) => player.id === event.player_registration_id)?.name ?? "Jugador", eventName: eventTypes.find((type) => type.id === event.event_type_id)?.name ?? "Evento", minute: event.minute ?? 0, comments: event.comments })), sheetEntries: (entriesResult.data ?? []).map((entry) => ({ playerRegistrationId: entry.player_registration_id, shirtNumber: entry.shirt_number, isPresent: entry.is_present, isCaptain: entry.is_captain, isGoalkeeper: entry.is_goalkeeper, isStarter: entry.is_starter, notes: entry.notes })), confirmations: (confirmationsResult.data ?? []).map((confirmation) => ({ confirmationType: confirmation.confirmation_type, confirmedAt: confirmation.confirmed_at, comments: confirmation.comments })), sheetStatus: controlResult.data?.status ?? null, matchFinishedAt: controlResult.data?.match_finished_at ?? null, clock: { status: controlResult.data?.clock_status ?? "NOT_STARTED", startedAt: controlResult.data?.clock_started_at ?? null, elapsedSeconds: controlResult.data?.clock_elapsed_seconds ?? 0 }, permissions: { canManageSheet: isAdministrator, canEditSheet: isAdministrator || isReferee, canConfirmHomeDelegate: isAdministrator || Boolean(homeDelegateResult.data), canConfirmAwayDelegate: isAdministrator || Boolean(awayDelegateResult.data), canConfirmOfficials: isAdministrator || isReferee } };
 }
 
 function getAgeAtDate(birthDate: string | null) {
@@ -467,7 +468,33 @@ export async function finishMatchSheet(matchId: string) {
   const { data: roleCode, error: roleError } = await (supabase.rpc("current_role_code" as never) as unknown as Promise<{ data: string | null; error: { message: string } | null }>);
   if (roleError) throw new Error(roleError.message);
   if (!(["SUPER_ADMIN", "TOURNAMENT_ADMIN", "REFEREE"] as const).includes(roleCode as "SUPER_ADMIN" | "TOURNAMENT_ADMIN" | "REFEREE")) throw new Error("No tenés permiso para finalizar el partido.");
-  const { error } = await (supabase.from("match_sheet_controls" as never).update({ match_finished_at: new Date().toISOString(), match_finished_by: user.id, updated_at: new Date().toISOString() }).eq("match_id", matchId).eq("status", "OPEN").is("match_finished_at", null) as unknown as Promise<{ error: { message: string } | null }>);
+  const { data: control, error: controlError } = await (supabase.from("match_sheet_controls" as never).select("clock_status,clock_started_at,clock_elapsed_seconds").eq("match_id", matchId).eq("status", "OPEN").is("match_finished_at", null).single() as unknown as Promise<{ data: { clock_status: "NOT_STARTED" | "RUNNING" | "PAUSED" | "FINISHED"; clock_started_at: string | null; clock_elapsed_seconds: number | null } | null; error: { message: string } | null }>);
+  if (controlError || !control) throw new Error(controlError?.message ?? "La planilla no está abierta para finalizar el partido.");
+  const now = new Date();
+  const elapsed = control.clock_status === "RUNNING" && control.clock_started_at ? Math.max(0, Math.floor((now.getTime() - new Date(control.clock_started_at).getTime()) / 1000)) + (control.clock_elapsed_seconds ?? 0) : control.clock_elapsed_seconds ?? 0;
+  const { error } = await (supabase.from("match_sheet_controls" as never).update({ match_finished_at: now.toISOString(), match_finished_by: user.id, clock_status: "FINISHED", clock_started_at: null, clock_elapsed_seconds: elapsed, updated_at: now.toISOString() }).eq("match_id", matchId).eq("status", "OPEN").is("match_finished_at", null) as unknown as Promise<{ error: { message: string } | null }>);
+  if (error) throw new Error(error.message);
+}
+
+export async function updateMatchClock(values: MatchClockValues) {
+  await requireUser();
+  const supabase = await assertOpenSheetEditor(values.matchId);
+  const { data: control, error: controlError } = await (supabase.from("match_sheet_controls" as never).select("clock_status,clock_started_at,clock_elapsed_seconds").eq("match_id", values.matchId).single() as unknown as Promise<{ data: { clock_status: "NOT_STARTED" | "RUNNING" | "PAUSED" | "FINISHED"; clock_started_at: string | null; clock_elapsed_seconds: number | null } | null; error: { message: string } | null }>);
+  if (controlError || !control) throw new Error(controlError?.message ?? "No se encontró el cronómetro de la planilla.");
+  const now = new Date();
+  const elapsed = control.clock_elapsed_seconds ?? 0;
+  let patch: { clock_status: "RUNNING" | "PAUSED"; clock_started_at: string | null; clock_elapsed_seconds: number; updated_at: string };
+  if (values.action === "START") {
+    if (control.clock_status !== "NOT_STARTED") throw new Error("El cronómetro ya fue iniciado.");
+    patch = { clock_status: "RUNNING", clock_started_at: now.toISOString(), clock_elapsed_seconds: elapsed, updated_at: now.toISOString() };
+  } else if (values.action === "RESUME") {
+    if (control.clock_status !== "PAUSED") throw new Error("El cronómetro sólo puede reanudarse cuando está pausado.");
+    patch = { clock_status: "RUNNING", clock_started_at: now.toISOString(), clock_elapsed_seconds: elapsed, updated_at: now.toISOString() };
+  } else {
+    if (control.clock_status !== "RUNNING" || !control.clock_started_at) throw new Error("El cronómetro no está en marcha.");
+    patch = { clock_status: "PAUSED", clock_started_at: null, clock_elapsed_seconds: elapsed + Math.max(0, Math.floor((now.getTime() - new Date(control.clock_started_at).getTime()) / 1000)), updated_at: now.toISOString() };
+  }
+  const { error } = await (supabase.from("match_sheet_controls" as never).update(patch).eq("match_id", values.matchId) as unknown as Promise<{ error: { message: string } | null }>);
   if (error) throw new Error(error.message);
 }
 
