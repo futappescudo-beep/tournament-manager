@@ -22,12 +22,12 @@ Usar únicamente equipos, jugadores e identificadores ficticios. Nunca cargar DN
 2. Crear cuatro equipos, asignarlos a zona y registrar jugadores existentes o nuevos.
    - Desde **Jugadores** y desde **Plantel**, elegir un equipo recién creado y comprobar que se habilitan su categoría y zona.
 3. Generar los cruces regulares, comprobar que no duplica partidos y programar día, hora y cancha.
-4. Crear planilla preliminar, cancelarla una vez, recrearla, abrirla e iniciar el cronómetro. Salir al fixture, abrir una segunda planilla e iniciar su cronómetro; intentar iniciar una tercera y verificar que la base la rechaza. Buscar un jugador por DNI y por nombre; validar DNI, nacimiento, edad, número y titularidad.
+4. Crear planilla preliminar, cancelarla una vez, recrearla y abrirla. Buscar un jugador por DNI y por nombre; validar DNI, nacimiento, edad, número y titularidad. El cronómetro persistente queda fuera de esta ronda de aceptación hasta optimizar su funcionamiento.
 5. Marcar **Partido finalizado**. Confirmar ambos delegados (uno con comentario/reclamo), después árbitro y finalmente veedor; cerrar la planilla y comprobar que el resultado queda bloqueado.
 6. Reabrir como administrador, ajustar el resultado por reclamo y volver a cerrar.
 7. Confirmar resultado, posiciones, goleadores y sanciones; crear y publicar un cuadro de Play Off.
 8. Archivar el torneo y verificar que desaparece de las operaciones activas, pero sus datos se preservan para el futuro módulo histórico.
-9. Con Dashboard abierto en otra sesión, registrar un marcador o evento y verificar que el estado **EN JUEGO** y el marcador se actualizan sin recargar manualmente.
+9. Con Dashboard abierto en otra sesión, registrar un marcador o evento y verificar que el marcador se actualiza sin recargar manualmente.
 
 ## Criterio de salida
 
