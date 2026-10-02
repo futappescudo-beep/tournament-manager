@@ -11,7 +11,7 @@ Usar únicamente equipos, jugadores e identificadores ficticios. Nunca cargar DN
 | --- | --- | --- |
 | SUPER_ADMIN | Gestionar catálogos, roles, equipos, fixture, planillas, resultados, Play Off y archivo | — |
 | TOURNAMENT_ADMIN | Operar torneo, fixture, planillas y resultados activos | Cambiar roles globales o configuración exclusiva de superadmin |
-| REFEREE compartido | Consultar y editar una planilla abierta, marcar partido finalizado y confirmar como árbitro/veedor cuando corresponda | Gestionar equipos, jugadores, configuración, cerrar/reabrir planilla o editar resultado cerrado |
+| REFEREE compartido | Consultar y editar una planilla abierta, marcar partido finalizado, cerrar una planilla finalizada como contingencia y confirmar como árbitro/veedor cuando corresponda | Gestionar equipos, jugadores, configuración, reabrir planilla o editar resultado cerrado |
 | Delegado (PLAYER asignado) | Consultar y confirmar la planilla finalizada de su equipo, con comentario o reclamo | Ver o confirmar planillas de otro equipo; editar convocatoria, eventos o resultados |
 | PLAYER | Aplicar filtros y consultar Principal, Fixture, Resultados, Posiciones, Goleadores, Sanciones y Reglamento | Crear/editar equipos, jugadores, fixture, resultados, pagos, configuración o planillas ajenas |
 | Invitado | Consultar `/public`, cambiar filtros y navegar en modo lectura | Acceder a rutas privadas, modificar datos o consultar tablas administrativas |
@@ -24,7 +24,7 @@ Usar únicamente equipos, jugadores e identificadores ficticios. Nunca cargar DN
 3. Generar los cruces regulares, comprobar que no duplica partidos y programar día, hora y cancha.
 4. Crear planilla preliminar, cancelarla una vez, recrearla y abrirla. Buscar un jugador por DNI y por nombre; validar DNI, nacimiento, edad, número y titularidad. El cronómetro persistente queda fuera de esta ronda de aceptación hasta optimizar su funcionamiento.
 5. Marcar **Partido finalizado**. Confirmar ambos delegados (uno con comentario/reclamo), después árbitro y finalmente veedor; cerrar la planilla y comprobar que el resultado queda bloqueado.
-6. Reabrir como administrador, ajustar el resultado por reclamo y volver a cerrar.
+6. Verificar que cada gol actualice Fixture y Dashboard de inmediato, sin sumar puntos aún; al finalizar el partido debe impactar en la tabla. Reabrir como administrador, ajustar un evento o resultado por reclamo y volver a cerrar.
 7. Confirmar resultado, posiciones, goleadores y sanciones; crear y publicar un cuadro de Play Off.
 8. Archivar el torneo y verificar que desaparece de las operaciones activas, pero sus datos se preservan para el futuro módulo histórico.
 9. Con Dashboard abierto en otra sesión, registrar un marcador o evento y verificar que el marcador se actualiza sin recargar manualmente.

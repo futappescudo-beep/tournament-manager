@@ -353,10 +353,21 @@ function getAgeAtDate(birthDate: string | null) {
 
 export async function setMatchSheetStatus(values: MatchSheetStatusValues) {
   const user = await requireUser(); const supabase = await createClient(); const now = new Date().toISOString();
+  const { data: roleCode, error: roleError } = await (supabase.rpc("current_role_code" as never) as unknown as Promise<{ data: string | null; error: { message: string } | null }>);
+  if (roleError) throw new Error(roleError.message);
+  const isAdministrator = roleCode === "SUPER_ADMIN" || roleCode === "TOURNAMENT_ADMIN";
+  const isReferee = roleCode === "REFEREE";
+  if (!isAdministrator && !isReferee) throw new Error("No tenés permiso para modificar el estado de la planilla.");
   if (values.status === "DRAFT") {
+    if (!isAdministrator) throw new Error("Solo la administración puede crear una planilla preliminar.");
     const { error } = await (supabase.from("match_sheet_controls" as never).insert({ match_id: values.matchId, status: "DRAFT", created_by: user.id }) as unknown as Promise<{ error: { message: string } | null }>);
     if (error) throw new Error(error.message); return;
   }
+  const { data: control, error: controlError } = await (supabase.from("match_sheet_controls" as never).select("status,match_finished_at").eq("match_id", values.matchId).maybeSingle() as unknown as Promise<{ data: { status: "DRAFT" | "OPEN" | "CLOSED"; match_finished_at: string | null } | null; error: { message: string } | null }>);
+  if (controlError) throw new Error(controlError.message);
+  if (!control) throw new Error("No existe una planilla para este partido.");
+  if (values.status === "OPEN" && !isAdministrator) throw new Error("Solo la administración puede abrir o reabrir una planilla.");
+  if (values.status === "CLOSED" && !isAdministrator && (control.status !== "OPEN" || !control.match_finished_at)) throw new Error("El árbitro solo puede cerrar una planilla después de finalizar el partido.");
   const patch = values.status === "OPEN" ? { status: "OPEN", opened_by: user.id, opened_at: now, match_finished_at: null, match_finished_by: null, updated_at: now } : { status: "CLOSED", closed_by: user.id, closed_at: now, closing_observations: values.closingObservations || null, updated_at: now };
   const { error } = await (supabase.from("match_sheet_controls" as never).update(patch).eq("match_id", values.matchId) as unknown as Promise<{ error: { message: string } | null }>);
   if (error) throw new Error(error.message);

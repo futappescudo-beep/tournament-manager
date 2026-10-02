@@ -1,5 +1,11 @@
 # Historial de versiones
 
+## 0.2.59 — Marcador por eventos y cierre arbitral de contingencia
+
+- Cada alta, corrección o eliminación de un evento de tipo **Gol** recalcula el marcador de Local y Visitante automáticamente; la migración también recupera los eventos ya existentes.
+- Al marcar **Partido finalizado**, el encuentro pasa a estado Jugado y recién entonces impacta en posiciones.
+- El árbitro puede cerrar una planilla ya finalizada cuando un delegado no logra acceder. La reapertura sigue reservada a la administración.
+
 ## 0.2.58 — Consulta pública con filtros
 
 - Invitado ingresa sin sesión por `/public` y cuenta con navegación de solo lectura equivalente a Jugador.

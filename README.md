@@ -15,7 +15,7 @@ Aplicación web responsive para administrar torneos de fútbol amateur. Incluye 
 - Fixture manual y generación automática de una rueda regular por zona; programación posterior de día, horario, cancha y terna arbitral.
 - Play Off flexible de Oro, Plata u otra copa, con llaves y avance de ganadores.
 - Resultados, eventos, sanciones, goleadores, dashboard y posiciones.
-- Planilla digital con estados preliminar, abierta, partido finalizado y cerrada; búsqueda por DNI/nombre, presentismo, número de camiseta, titular/capitán/arquero por partido, eventos corregibles y confirmaciones digitales secuenciales.
+- Planilla digital con estados preliminar, abierta, partido finalizado y cerrada; búsqueda por DNI/nombre, presentismo, número de camiseta, titular/capitán/arquero por partido, eventos corregibles, marcador automático por goles y confirmaciones digitales secuenciales. El árbitro puede cerrar un partido finalizado como contingencia si un delegado no accede.
 - Actualización en tiempo real de marcadores y eventos en el Dashboard para usuarios autenticados. El cronómetro persistente queda reservado para una mejora futura.
 - Archivo de torneo que lo excluye de la operación activa sin borrar sus datos.
 

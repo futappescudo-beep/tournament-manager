@@ -8,6 +8,11 @@ export async function saveMatchEvent(values: MatchEventValues) {
   const event = matchEventSchema.parse(values);
   await createMatchEvent(event);
   revalidatePath(`/matches/${event.matchId}`);
+  revalidatePath("/matches");
+  revalidatePath("/dashboard");
+  revalidatePath("/results");
+  revalidatePath("/standings");
+  revalidatePath("/public");
   revalidatePath("/scorers");
   revalidatePath("/sanctions");
 }
@@ -16,6 +21,11 @@ export async function updateSheetEvent(values: MatchEventUpdateValues) {
   const event = matchEventUpdateSchema.parse(values);
   await updateMatchEvent(event);
   revalidatePath(`/matches/${event.matchId}`);
+  revalidatePath("/matches");
+  revalidatePath("/dashboard");
+  revalidatePath("/results");
+  revalidatePath("/standings");
+  revalidatePath("/public");
   revalidatePath("/scorers");
   revalidatePath("/sanctions");
 }
@@ -49,6 +59,11 @@ export async function finishMatchSheet(values: { matchId: string }) {
   const sheet = matchSheetFinishSchema.parse(values);
   await finishMatchSheetService(sheet.matchId);
   revalidatePath(`/matches/${sheet.matchId}`);
+  revalidatePath("/matches");
+  revalidatePath("/dashboard");
+  revalidatePath("/results");
+  revalidatePath("/standings");
+  revalidatePath("/public");
 }
 
 export async function updateMatchClock(values: MatchClockValues) {
